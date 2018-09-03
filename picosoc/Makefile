@@ -1,10 +1,10 @@
 
 # ---- iCE40 HX8K Breakout Board ----
 
-hx8ksim: hx8kdemo_tb.vvp firmware.hex
+hx8ksim: hx8kdemo_tb.vvp hx8kdemo_fw.hex
 	vvp -N $<
 
-hx8ksynsim: hx8kdemo_syn_tb.vvp firmware.hex
+hx8ksynsim: hx8kdemo_syn_tb.vvp hx8kdemo_fw.hex
 	vvp -N $<
 
 hx8kdemo.blif: hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v
