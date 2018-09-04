@@ -210,8 +210,8 @@ void print_dec(uint32_t v)
 
 void set_ws2812()
 {
-    uint8_t led_num = 0;
-    reg_ws2812 = led_num + (blu << 8) + (red << 16) + (grn << 24);
+    for(uint8_t led_num = 0; led_num < 8; led_num ++ )
+        reg_ws2812 = led_num + (blu << 8) + (red << 16) + (grn << 24);
 }
 
 uint8_t dir = 1;
@@ -578,7 +578,7 @@ void main()
 	reg_uart_clkdiv = 104;
 	print("Booting..\n");
     
-    reg_ws2812 = 0xFFAABB01;
+//    reg_ws2812 = 0xFFAABB01;
 	reg_leds = 63;
 	set_flash_qspi_flag();
 

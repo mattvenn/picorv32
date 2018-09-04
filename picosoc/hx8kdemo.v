@@ -111,7 +111,7 @@ module hx8kdemo (
 		end
 	end
 
-    ws2812 #(.NUM_LEDS(7)) ws2812_inst(.data(ws_data), .clk(clk), .reset(!resetn), .rgb_data(led_rgb_data), .led_num(led_num), .write(led_write));
+    ws2812 #(.NUM_LEDS(8)) ws2812_inst(.data(ws_data), .clk(clk), .reset(!resetn), .rgb_data(led_rgb_data), .led_num(led_num), .write(led_write));
 
 	picosoc soc (
 		.clk          (clk         ),
