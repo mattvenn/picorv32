@@ -3,6 +3,8 @@
 
 set_io clk J3
 
+set_io --warn-no-port ws_data C16
+
 set_io flash_csb R12
 set_io flash_clk R11
 set_io flash_io0 P12

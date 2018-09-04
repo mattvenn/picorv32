@@ -32,11 +32,16 @@ extern uint32_t sram;
 #define reg_uart_clkdiv (*(volatile uint32_t*)0x02000004)
 #define reg_uart_data (*(volatile uint32_t*)0x02000008)
 #define reg_leds (*(volatile uint32_t*)0x03000000)
+#define reg_ws2812 (*(volatile uint32_t*)0x04000000)
 
 // --------------------------------------------------------
 
 extern uint32_t flashio_worker_begin;
 extern uint32_t flashio_worker_end;
+bool animate = false;
+uint8_t red = 0;
+uint8_t grn = 0;
+uint8_t blu = 0;
 
 void flashio(uint8_t *data, int len, uint8_t wrencmd)
 {
@@ -203,14 +208,21 @@ void print_dec(uint32_t v)
 	else putchar('0');
 }
 
+void set_ws2812()
+{
+    uint8_t led_num = 0;
+    reg_ws2812 = led_num + (blu << 8) + (red << 16) + (grn << 24);
+}
+
+uint8_t dir = 1;
 char getchar_prompt(char *prompt)
 {
 	int32_t c = -1;
 
-	uint32_t cycles_begin, cycles_now, cycles;
+	uint32_t cycles_begin, cycles_now, cycles, anim_cycles, anim_cycles_begin;
 	__asm__ volatile ("rdcycle %0" : "=r"(cycles_begin));
+    anim_cycles_begin = cycles_begin;
 
-	reg_leds = ~0;
 
 	if (prompt)
 		print(prompt);
@@ -222,12 +234,19 @@ char getchar_prompt(char *prompt)
 			if (prompt)
 				print(prompt);
 			cycles_begin = cycles_now;
-			reg_leds = ~reg_leds;
+        }
+        anim_cycles = cycles_now - anim_cycles_begin;
+        if (animate && anim_cycles > 80000) {
+            red += dir;
+            blu -= dir;
+            if(red == 250 || red == 0)
+                dir = - dir;
+            set_ws2812();
+            anim_cycles_begin = cycles_now;
 		}
 		c = reg_uart_data;
 	}
 
-	reg_leds = 0;
 	return c;
 }
 
@@ -552,17 +571,27 @@ void cmd_benchmark_all()
 
 // --------------------------------------------------------
 
+
 void main()
 {
 	reg_leds = 31;
 	reg_uart_clkdiv = 104;
 	print("Booting..\n");
-
+    
+    reg_ws2812 = 0xFFAABB01;
 	reg_leds = 63;
 	set_flash_qspi_flag();
 
 	reg_leds = 127;
 	while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
+    reg_leds = 0;
+
+    /*
+    uint8_t * red;
+    uint8_t * grn;
+    red = &reg_leds + 0xFF;
+    grn = &reg_leds + 0xFFFF;
+    */
 
 	print("\n");
 	print("  ____  _          ____         ____\n");
@@ -602,15 +631,13 @@ void main()
 		print("\n");
 		print("Select an action:\n");
 		print("\n");
-		print("   [1] Read SPI Flash ID\n");
-		print("   [2] Read SPI Config Regs\n");
-		print("   [3] Switch to default mode\n");
-		print("   [4] Switch to Dual I/O mode\n");
-		print("   [5] Switch to Quad I/O mode\n");
-		print("   [6] Switch to Quad DDR mode\n");
-		print("   [7] Toggle continuous read mode\n");
-		print("   [9] Run simplistic benchmark\n");
-		print("   [0] Benchmark all configs\n");
+		print("   [1] Increment Red\n");
+		print("   [2] Increment Green\n");
+		print("   [3] Increment Blue\n");
+		print("   [4] Start animation\n");
+		print("   [5] Stop animation\n");
+		print("   [6] Increment led reg\n");
+		print("   [0] Set LEDs off\n");
 		print("\n");
 
 		for (int rep = 10; rep > 0; rep--)
@@ -624,32 +651,32 @@ void main()
 			switch (cmd)
 			{
 			case '1':
-				cmd_read_flash_id();
-				break;
+                red ++;
+                set_ws2812();
+                break;
 			case '2':
-				cmd_read_flash_regs();
-				break;
+                grn ++;
+                set_ws2812();
+                break;
 			case '3':
-				set_flash_mode_spi();
-				break;
-			case '4':
-				set_flash_mode_dual();
-				break;
-			case '5':
-				set_flash_mode_quad();
-				break;
-			case '6':
-				set_flash_mode_qddr();
-				break;
-			case '7':
-				reg_spictrl = reg_spictrl ^ 0x00100000;
-				break;
-			case '9':
-				cmd_benchmark(true, 0);
-				break;
-			case '0':
-				cmd_benchmark_all();
-				break;
+                blu ++;
+                set_ws2812();
+                break;
+            case '4':
+                red = 0; grn = 0; blu = 255;
+                set_ws2812();
+                animate = true;
+                break;
+            case '5':
+                animate = false;
+                break;
+            case '6':
+                reg_leds += 1;
+                break;
+            case '0':
+                red = 0; grn = 0; blu = 0;
+                set_ws2812();
+                break;
 			default:
 				continue;
 			}

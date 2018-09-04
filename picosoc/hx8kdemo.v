@@ -24,6 +24,7 @@ module hx8kdemo (
 	input ser_rx,
 
 	output [7:0] leds,
+    output ws_data,
 
 	output flash_csb,
 	output flash_clk,
@@ -72,14 +73,22 @@ module hx8kdemo (
 	reg  [31:0] iomem_rdata;
 
 	reg [31:0] gpio;
-	assign leds = gpio;
+    reg [31:0] leds_reg [0:1];
+    assign leds = gpio;
+
+    reg led_write = 0;
+    reg [7:0] led_num = 0;
+    reg [23:0] led_rgb_data = 0;
 
 	always @(posedge clk) begin
 		if (!resetn) begin
 			gpio <= 0;
 		end else begin
 			iomem_ready <= 0;
-			if (iomem_valid && !iomem_ready && iomem_addr[31:24] == 8'h 03) begin
+
+            led_write <= 0;
+
+			if (iomem_valid && !iomem_ready && iomem_addr == 32'h 0300_0000) begin
 				iomem_ready <= 1;
 				iomem_rdata <= gpio;
 				if (iomem_wstrb[0]) gpio[ 7: 0] <= iomem_wdata[ 7: 0];
@@ -87,8 +96,22 @@ module hx8kdemo (
 				if (iomem_wstrb[2]) gpio[23:16] <= iomem_wdata[23:16];
 				if (iomem_wstrb[3]) gpio[31:24] <= iomem_wdata[31:24];
 			end
+
+
+			else if (iomem_valid && !iomem_ready && iomem_addr == 32'h 0400_0000) begin
+				iomem_ready <= 1;
+                led_write <= 1;
+				iomem_rdata <= 0;
+				if (iomem_wstrb[0]) led_num             <= iomem_wdata[ 7: 0];
+				if (iomem_wstrb[1]) led_rgb_data[ 7: 0] <= iomem_wdata[15: 8];
+				if (iomem_wstrb[2]) led_rgb_data[15: 8] <= iomem_wdata[23:16];
+				if (iomem_wstrb[3]) led_rgb_data[23:16] <= iomem_wdata[31:24];
+			end
+
 		end
 	end
+
+    ws2812 #(.NUM_LEDS(7)) ws2812_inst(.data(ws_data), .clk(clk), .reset(!resetn), .rgb_data(led_rgb_data), .led_num(led_num), .write(led_write));
 
 	picosoc soc (
 		.clk          (clk         ),

@@ -29,6 +29,9 @@ module testbench;
 	initial begin
 		$dumpfile("testbench.vcd");
 		$dumpvars(0, testbench);
+        $dumpvars(1, uut.ws2812_inst.led_reg[2]);
+        $dumpvars(1, uut.ws2812_inst.led_reg[3]);
+
 
 		repeat (6) begin
 			repeat (50000) @(posedge clk);

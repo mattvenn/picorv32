@@ -1,0 +1,63 @@
+[*]
+[*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
+[*] Tue Sep  4 15:31:34 2018
+[*]
+[dumpfile] "/home/matt/work/fpga/picorv32/picosoc/testbench.vcd"
+[dumpfile_mtime] "Tue Sep  4 15:30:38 2018"
+[dumpfile_size] 94559672
+[savefile] "/home/matt/work/fpga/picorv32/picosoc/soc.gtkw"
+[timestart] 1066390000
+[size] 2512 1573
+[pos] -1 -1
+*-21.681156 1083890000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] testbench.
+[treeopen] testbench.uut.
+[treeopen] testbench.uut.soc.
+[sst_width] 253
+[signals_width] 598
+[sst_expanded] 1
+[sst_vpaned_height] 500
+@28
+testbench.clk
+testbench.uut.soc.resetn
+testbench.ser_rx
+testbench.ser_tx
+@24
+testbench.leds[7:0]
+@22
+testbench.uut.gpio[31:0]
+@28
+testbench.uut.ws2812_inst.reset
+testbench.uut.iomem_ready
+@22
+testbench.uut.iomem_wstrb[3:0]
+testbench.uut.iomem_wdata[31:0]
+testbench.uut.iomem_addr[31:0]
+@200
+-
+@22
+testbench.uut.led_num[7:0]
+testbench.uut.led_rgb_data[23:0]
+@28
+testbench.uut.led_write
+@200
+-
+@22
+testbench.uut.ws2812_inst.\led_reg[2][23:0]
+testbench.uut.ws2812_inst.\led_reg[3][23:0]
+@28
+testbench.uut.ws2812_inst.data
+@23
+testbench.uut.ws2812_inst.led_counter[3:0]
+@200
+-
+@22
+testbench.uut.soc.memory.addr[21:0]
+testbench.uut.soc.memory.rdata[31:0]
+testbench.uut.soc.memory.wdata[31:0]
+testbench.uut.soc.cpu.mem_addr[31:0]
+testbench.uut.soc.cpu.mem_la_addr[31:0]
+@200
+-
+[pattern_trace] 1
+[pattern_trace] 0
