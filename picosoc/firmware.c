@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "animate.h"
 
 #if !defined(ICEBREAKER) && !defined(HX8KDEMO)
 #  error "Set -DICEBREAKER or -DHX8KDEMO when compiling firmware.c"
@@ -32,7 +33,6 @@ extern uint32_t sram;
 #define reg_uart_clkdiv (*(volatile uint32_t*)0x02000004)
 #define reg_uart_data (*(volatile uint32_t*)0x02000008)
 #define reg_leds (*(volatile uint32_t*)0x03000000)
-#define reg_ws2812 (*(volatile uint32_t*)0x04000000)
 
 // --------------------------------------------------------
 
@@ -208,11 +208,6 @@ void print_dec(uint32_t v)
 	else putchar('0');
 }
 
-void set_ws2812()
-{
-    for(uint8_t led_num = 0; led_num < 8; led_num ++ )
-        reg_ws2812 = led_num + (blu << 8) + (red << 16) + (grn << 24);
-}
 
 uint8_t dir = 1;
 char getchar_prompt(char *prompt)
@@ -236,13 +231,9 @@ char getchar_prompt(char *prompt)
 			cycles_begin = cycles_now;
         }
         anim_cycles = cycles_now - anim_cycles_begin;
-        if (animate && anim_cycles > 80000) {
-            red += dir;
-            blu -= dir;
-            if(red == 250 || red == 0)
-                dir = - dir;
-            set_ws2812();
+        if (animate && anim_cycles > 800000) {
             anim_cycles_begin = cycles_now;
+            LEDRainbowWaveEffect();
 		}
 		c = reg_uart_data;
 	}
@@ -572,13 +563,14 @@ void cmd_benchmark_all()
 // --------------------------------------------------------
 
 
+
 void main()
 {
+    cRGB color;
 	reg_leds = 31;
 	reg_uart_clkdiv = 104;
 	print("Booting..\n");
     
-//    reg_ws2812 = 0xFFAABB01;
 	reg_leds = 63;
 	set_flash_qspi_flag();
 
@@ -651,20 +643,18 @@ void main()
 			switch (cmd)
 			{
 			case '1':
-                red ++;
-                set_ws2812();
+                color.r ++;
+                set_ws2812(color,0);
                 break;
 			case '2':
-                grn ++;
-                set_ws2812();
+                color.g ++;
+                set_ws2812(color,0);
                 break;
 			case '3':
-                blu ++;
-                set_ws2812();
+                color.b ++;
+                set_ws2812(color,0);
                 break;
             case '4':
-                red = 0; grn = 0; blu = 255;
-                set_ws2812();
                 animate = true;
                 break;
             case '5':
@@ -674,8 +664,10 @@ void main()
                 reg_leds += 1;
                 break;
             case '0':
-                red = 0; grn = 0; blu = 0;
-                set_ws2812();
+                color.r = 0;
+                color.g = 0;
+                color.b = 0;
+                set_ws2812(color,0);
                 break;
 			default:
 				continue;
