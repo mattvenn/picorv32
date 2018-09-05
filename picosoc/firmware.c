@@ -231,7 +231,7 @@ char getchar_prompt(char *prompt)
 			cycles_begin = cycles_now;
         }
         anim_cycles = cycles_now - anim_cycles_begin;
-        if (animate && anim_cycles > 800000) {
+        if (animate && anim_cycles > 500000) {
             anim_cycles_begin = cycles_now;
             LEDRainbowWaveEffect();
 		}

@@ -5,7 +5,7 @@
 
 uint16_t rainbow_hue = 0;
 uint8_t rainbow_saturation = 255;
-uint8_t rainbow_wave_steps = 3;
+uint8_t rainbow_wave_steps = 1;
 uint8_t rainbow_value = 50;
 
 uint32_t millis()
@@ -21,7 +21,7 @@ void set_ws2812(cRGB val, uint8_t num)
 void LEDRainbowWaveEffect () {
 
   for (uint8_t i = 0; i < LED_COUNT; i++) {
-    uint16_t key_hue = rainbow_hue + 2 * (i);
+    uint16_t key_hue = rainbow_hue + 32 * (i);
     if (key_hue >= 255) {
       key_hue -= 255;
     }
