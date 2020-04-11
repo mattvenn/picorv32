@@ -1,6 +1,8 @@
+PI_ADDR = pi@fpga.local
+FOMU_FLASH = ~/fomu-flash/fomu-flash
 
-CROSS=riscv32-unknown-elf-
-CFLAGS=
+CROSS=riscv64-unknown-elf-
+CFLAGS=-mabi=ilp32 
 
 # ---- iCE40 HX8K Breakout Board ----
 
@@ -23,7 +25,7 @@ hx8kdemo_syn.v: hx8kdemo.json
 	yosys -p 'read_json -wideports hx8kdemo.json; write_verilog hx8kdemo_syn.v'
 
 hx8kdemo.asc: hx8kdemo.pcf hx8kdemo.json
-	nextpnr-ice40 --freq 13 --package ct256 --hx8k --asc hx8kdemo.asc --pcf hx8kdemo.pcf --json hx8kdemo.json
+	nextpnr-ice40 --freq 13 --package tq144:4k --hx8k --asc hx8kdemo.asc --pcf hx8kdemo.pcf --json hx8kdemo.json
 
 hx8kdemo.bin: hx8kdemo.asc
 	icetime -d hx8k -c 12 -mtr hx8kdemo.rpt hx8kdemo.asc
