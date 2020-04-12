@@ -6,6 +6,11 @@ CFLAGS=-mabi=ilp32
 
 # ---- iCE40 HX8K Breakout Board ----
 
+hx8kdemo_all.bin: hx8kdemo.bin hx8kdemo_fw.bin
+	cp hx8kdemo.bin hx8kdemo.padded.bin
+	dd if=/dev/zero of=hx8kdemo.padded.bin bs=1 count=1 seek=1048575
+	cat hx8kdemo.padded.bin hx8kdemo_fw.bin > hx8kdemo_all.bin 
+
 hx8ksim: hx8kdemo_tb.vvp hx8kdemo_fw.hex
 	vvp -N $< +firmware=hx8kdemo_fw.hex
 
