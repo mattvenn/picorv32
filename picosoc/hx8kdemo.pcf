@@ -2,11 +2,12 @@
 # Pinout for the iCE40-HX8K Breakout Board
 
 set_io clk 49
+set_io -nowarn reset_button      37
 
 set_io flash_csb 71
 set_io flash_clk 70
-set_io flash_io0 68
-set_io flash_io1 67
+set_io flash_io0 67
+set_io flash_io1 68
 
 # for QSPI mode the flash chip on the iCE40-HX8K Breakout Board
 # must be replaced with one that supports QSPI and the IO2 and IO3
@@ -17,18 +18,19 @@ set_io flash_io3 62
 set_io ser_tx 42  # raspi gpio16
 set_io ser_rx 43  # raspi gpio13
 
-# left on J3
-#set_io debug_ser_tx T1
-#set_io debug_ser_rx R3
+# pmod 4
+set_io debug_ser_tx 3
+set_io debug_ser_rx 1
 
-# right on J3
-#set_io debug_flash_csb T15
-#set_io debug_flash_clk R16
-#set_io debug_flash_io0 N12
-#set_io debug_flash_io1 P13
-#set_io debug_flash_io2 T13
-#set_io debug_flash_io3 T14
+# pmod 4
+set_io debug_flash_csb 10 # 1
+set_io debug_flash_clk 8  # 2
+set_io debug_flash_io0 4  # 3
+set_io debug_flash_io1 2  # 4
+set_io debug_flash_io2 9
+set_io debug_flash_io3 7
 
+# pmod 5
 set_io -nowarn leds[7] 96
 set_io -nowarn leds[6] 97
 set_io -nowarn leds[5] 98
