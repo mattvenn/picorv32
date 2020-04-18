@@ -16,6 +16,7 @@
  *  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  */
+`default_nettype none
 
 module hx8kdemo (
 	input clk,
@@ -25,6 +26,7 @@ module hx8kdemo (
 	input ser_rx,
 
 	output [7:0] leds,
+    input [3:0] buttons,
 
 	output flash_csb,
 	output flash_clk,
@@ -74,22 +76,88 @@ module hx8kdemo (
 	wire [31:0] iomem_wdata;
 	reg  [31:0] iomem_rdata;
 
-	reg [31:0] gpio;
-	assign leds = gpio;
+	reg [31:0] wbm_adr_o;
+	reg [31:0] wbm_dat_o;
+	wire [31:0] wbm_dat_i;
+	reg wbm_we_o;
+	reg [3:0] wbm_sel_o;
+	reg wbm_stb_o;
+	wire wbm_ack_i;
+	reg wbm_cyc_o;
+
+    // same address as where the gpio leds were
+    wb_buttons_leds #(.address(32'h03_00_00_00)) wb_buttons_leds_0 (
+        .clk        (clk),
+        .reset      (~resetn),
+        .i_wb_cyc   (wbm_cyc_o),
+        .i_wb_stb   (wbm_stb_o),
+        .i_wb_we    (wbm_we_o),
+        .i_wb_addr  (wbm_adr_o),
+        .i_wb_data  (wbm_dat_o),
+        .o_wb_ack   (wbm_ack_i),
+        .o_wb_data  (wbm_dat_i),
+        .buttons    (buttons),
+        .leds       (leds)
+    );
+
+	localparam IDLE = 2'b00;
+	localparam WBSTART = 2'b01;
+	localparam WBEND = 2'b10;
+
+	reg [1:0] state;
+
+	wire we;
+	assign we = (iomem_wstrb[0] | iomem_wstrb[1] | iomem_wstrb[2] | iomem_wstrb[3]);
 
 	always @(posedge clk) begin
-		if (!resetn) begin
-			gpio <= 0;
+		if (~resetn) begin
+			wbm_adr_o <= 0;
+			wbm_dat_o <= 0;
+			wbm_we_o <= 0;
+			wbm_sel_o <= 0;
+			wbm_stb_o <= 0;
+			wbm_cyc_o <= 0;
+			state <= IDLE;
 		end else begin
-			iomem_ready <= 0;
-			if (iomem_valid && !iomem_ready && iomem_addr[31:24] == 8'h 03) begin
-				iomem_ready <= 1;
-				iomem_rdata <= gpio;
-				if (iomem_wstrb[0]) gpio[ 7: 0] <= iomem_wdata[ 7: 0];
-				if (iomem_wstrb[1]) gpio[15: 8] <= iomem_wdata[15: 8];
-				if (iomem_wstrb[2]) gpio[23:16] <= iomem_wdata[23:16];
-				if (iomem_wstrb[3]) gpio[31:24] <= iomem_wdata[31:24];
-			end
+			case (state)
+				IDLE: begin
+					if (iomem_valid) begin
+						wbm_adr_o <= iomem_addr;
+						wbm_dat_o <= iomem_wdata;
+						wbm_we_o <= we;
+						wbm_sel_o <= iomem_wstrb;
+
+						wbm_stb_o <= 1'b1;
+						wbm_cyc_o <= 1'b1;
+						state <= WBSTART;
+					end else begin
+						iomem_ready <= 1'b0;
+
+						wbm_stb_o <= 1'b0;
+						wbm_cyc_o <= 1'b0;
+						wbm_we_o <= 1'b0;
+					end
+				end
+				WBSTART:begin
+					if (wbm_ack_i) begin
+						iomem_rdata <= wbm_dat_i;
+						iomem_ready <= 1'b1;
+
+						state <= WBEND;
+
+						wbm_stb_o <= 1'b0;
+						wbm_cyc_o <= 1'b0;
+						wbm_we_o <= 1'b0;
+					end
+				end
+				WBEND: begin
+					iomem_ready <= 1'b0;
+
+					state <= IDLE;
+				end
+				default:
+					state <= IDLE;
+			endcase
 		end
 	end
 

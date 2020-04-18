@@ -10,6 +10,8 @@ miniterm.py /dev/serial0 115200
 
 add serial pins to board v3?
 
+change memory offset for faster loading with fomu
+
 PicoSoC - A simple example SoC using PicoRV32
 =============================================
 

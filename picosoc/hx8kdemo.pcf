@@ -18,17 +18,17 @@ set_io flash_io3 62
 set_io ser_tx 32  # -> gpio15 (rxd)
 set_io ser_rx 34  # -> gpio14 (txd)
 
-# pmod 4
-set_io debug_ser_tx 3
-set_io debug_ser_rx 1
+# pmod 2
+set_io debug_ser_tx 136
+set_io debug_ser_rx 137
 
-# pmod 4
-set_io debug_flash_csb 10 # 1
-set_io debug_flash_clk 8  # 2
-set_io debug_flash_io0 4  # 3
-set_io debug_flash_io1 2  # 4
-set_io debug_flash_io2 9
-set_io debug_flash_io3 7
+# pmod 2
+set_io debug_flash_csb 138
+set_io debug_flash_clk 139
+set_io debug_flash_io0 141
+set_io debug_flash_io1 142
+set_io debug_flash_io2 143
+set_io debug_flash_io3 144
 
 # pmod 5
 set_io -nowarn leds[7] 96
@@ -39,3 +39,13 @@ set_io -nowarn leds[3] 101
 set_io -nowarn leds[2] 102
 set_io -nowarn leds[1] 104
 set_io -nowarn leds[0] 105
+
+# pmod 4
+set_io -nowarn buttons[0] 1
+set_io -nowarn buttons[1] 2
+set_io -nowarn buttons[2] 3
+set_io -nowarn buttons[3] 4
+set_io -nowarn buttons[4] 7
+set_io -nowarn buttons[5] 8
+set_io -nowarn buttons[6] 9
+set_io -nowarn buttons[7] 10
