@@ -11,6 +11,11 @@ hx8kdemo_all.bin: hx8kdemo.bin hx8kdemo_fw.bin
 	dd if=/dev/zero of=hx8kdemo.padded.bin bs=1 count=1 seek=262143
 	cat hx8kdemo.padded.bin hx8kdemo_fw.bin > hx8kdemo_all.bin 
 
+prog-pi-fpga: hx8kdemo_all.bin
+	scp $< $(PI_ADDR):/tmp/$<
+	ssh $(PI_ADDR) "sudo $(FOMU_FLASH) -w /tmp/$< && sudo $(FOMU_FLASH) -r"
+	echo "now press sw1 on dev board to reset"
+
 hx8ksim: hx8kdemo_tb.vvp hx8kdemo_fw.hex
 	vvp -N $< +firmware=hx8kdemo_fw.hex
 
