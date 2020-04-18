@@ -35,7 +35,7 @@ extern uint32_t sram;
 #define reg_spictrl (*(volatile uint32_t*)0x02000000)
 #define reg_uart_clkdiv (*(volatile uint32_t*)0x02000004)
 #define reg_uart_data (*(volatile uint32_t*)0x02000008)
-#define reg_leds (*(volatile uint32_t*)0x03000000)
+#define reg_wb (*(volatile uint32_t*)0x03000000)
 
 // --------------------------------------------------------
 
@@ -224,7 +224,7 @@ char getchar_prompt(char *prompt)
 	uint32_t cycles_begin, cycles_now, cycles;
 	__asm__ volatile ("rdcycle %0" : "=r"(cycles_begin));
 
-	reg_leds = ~0;
+	reg_wb = ~0;
 
 	if (prompt)
 		print(prompt);
@@ -236,12 +236,12 @@ char getchar_prompt(char *prompt)
 			if (prompt)
 				print(prompt);
 			cycles_begin = cycles_now;
-			reg_leds = ~reg_leds;
+			reg_wb = ~reg_wb;
 		}
 		c = reg_uart_data;
 	}
 
-	reg_leds = 0;
+	reg_wb = 0;
 	return c;
 }
 
@@ -663,118 +663,61 @@ void cmd_echo()
 
 // --------------------------------------------------------
 
-void main()
+void blink_up()
 {
-    reg_leds = 0; 
-    uint8_t led_counter = 0;
-    while(1)
+    uint8_t leds = 1;
+    for(int i = 0; i < 8 ; i ++)
     {
+        reg_wb = leds;
+        leds = leds << 1;
         for(int i = 0; i < 1000; i ++) { ;; }
+    }
+}
 
-        led_counter ++;
-        reg_leds = led_counter;
+
+void blink_down()
+{
+    uint8_t leds = 128;
+    for(int i = 0; i < 8 ; i ++)
+    {
+        reg_wb = leds;
+        leds = leds >> 1;
+        for(int i = 0; i < 1000; i ++) { ;; }
     }
 
-	reg_leds = 31;
-	reg_uart_clkdiv = 104;
-	print("Booting..\n");
+}
 
-	reg_leds = 63;
-	set_flash_qspi_flag();
+void blink_all(int num)
+{
+    for(int i = 0; i < num; i ++)
+    {
+        reg_wb = 255;
+        for(int i = 0; i < 2000; i ++) { ;; }
+        reg_wb = 0;
+        for(int i = 0; i < 2000; i ++) { ;; }
 
-	reg_leds = 127;
-	while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
+    }
+}
+void main()
+{
+    reg_wb = 0; 
+    uint8_t led_counter = 0;
+    for(led_counter = 0; led_counter <= 10 ; led_counter ++)
+    {
+        for(int i = 0; i < 1000; i ++) { ;; }
+        reg_wb = led_counter;
+    }
 
-	print("\n");
-	print("  ____  _          ____         ____\n");
-	print(" |  _ \\(_) ___ ___/ ___|  ___  / ___|\n");
-	print(" | |_) | |/ __/ _ \\___ \\ / _ \\| |\n");
-	print(" |  __/| | (_| (_) |__) | (_) | |___\n");
-	print(" |_|   |_|\\___\\___/____/ \\___/ \\____|\n");
-	print("\n");
-
-	print("Total memory: ");
-	print_dec(MEM_TOTAL / 1024);
-	print(" KiB\n");
-	print("\n");
-
-	cmd_memtest();
-	print("\n");
-
-	cmd_print_spi_state();
-	print("\n");
-
-	while (1)
-	{
-		print("\n");
-
-		print("Select an action:\n");
-		print("\n");
-		print("   [1] Read SPI Flash ID\n");
-		print("   [2] Read SPI Config Regs\n");
-		print("   [3] Switch to default mode\n");
-		print("   [4] Switch to Dual I/O mode\n");
-		print("   [5] Switch to Quad I/O mode\n");
-		print("   [6] Switch to Quad DDR mode\n");
-		print("   [7] Toggle continuous read mode\n");
-		print("   [9] Run simplistic benchmark\n");
-		print("   [0] Benchmark all configs\n");
-		print("   [M] Run Memtest\n");
-		print("   [S] Print SPI state\n");
-		print("   [e] Echo UART\n");
-		print("\n");
-
-		for (int rep = 10; rep > 0; rep--)
-		{
-			print("Command> ");
-			char cmd = getchar();
-			if (cmd > 32 && cmd < 127)
-				putchar(cmd);
-			print("\n");
-
-			switch (cmd)
-			{
-			case '1':
-				cmd_read_flash_id();
-				break;
-			case '2':
-				cmd_read_flash_regs();
-				break;
-			case '3':
-				set_flash_mode_spi();
-				break;
-			case '4':
-				set_flash_mode_dual();
-				break;
-			case '5':
-				set_flash_mode_quad();
-				break;
-			case '6':
-				set_flash_mode_qddr();
-				break;
-			case '7':
-				reg_spictrl = reg_spictrl ^ 0x00100000;
-				break;
-			case '9':
-				cmd_benchmark(true, 0);
-				break;
-			case '0':
-				cmd_benchmark_all();
-				break;
-			case 'M':
-				cmd_memtest();
-				break;
-			case 'S':
-				cmd_print_spi_state();
-				break;
-			case 'e':
-				cmd_echo();
-				break;
-			default:
-				continue;
-			}
-
-			break;
-		}
-	}
+    
+    uint8_t buttons = 0;
+    while(1) {
+        // read the value of the buttons
+        buttons = reg_wb;
+        if(buttons & (1 << 0))
+            blink_up();
+        if(buttons & (1 << 1))
+            blink_down();
+        if(buttons & (1 << 2))
+            blink_all(10);
+        }
 }

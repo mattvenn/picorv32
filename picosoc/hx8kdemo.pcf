@@ -44,8 +44,8 @@ set_io -nowarn leds[0] 105
 set_io -nowarn buttons[0] 1
 set_io -nowarn buttons[1] 2
 set_io -nowarn buttons[2] 3
-set_io -nowarn buttons[3] 4
-set_io -nowarn buttons[4] 7
-set_io -nowarn buttons[5] 8
-set_io -nowarn buttons[6] 9
-set_io -nowarn buttons[7] 10
+#set_io -nowarn buttons[3] 4
+#set_io -nowarn buttons[4] 7
+#set_io -nowarn buttons[5] 8
+#set_io -nowarn buttons[6] 9
+#set_io -nowarn buttons[7] 10

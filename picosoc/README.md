@@ -11,6 +11,8 @@ miniterm.py /dev/serial0 115200
 add serial pins to board v3?
 
 change memory offset for faster loading with fomu
+change PROGADDR_RESET in picosoc.v to 0x40000 (256k)
+change FLASH (rx)      : ORIGIN = 0x00040000, LENGTH = 0x400000 /* entire flash, 4 MiB */
 
 PicoSoC - A simple example SoC using PicoRV32
 =============================================
