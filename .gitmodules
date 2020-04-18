@@ -1,0 +1,3 @@
+[submodule "picosoc/wishbone-button-leds"]
+	path = picosoc/wishbone-button-leds
+	url = https://github.com/mattvenn/wishbone-button-leds.git

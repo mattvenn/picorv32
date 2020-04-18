@@ -1,18 +1,22 @@
-pullup on hold
+# Changes made for my dev board
 
-connect serial tx (pin 8) to pin 1 (top right pin) of pmod3
-connect serial rx (pin 10) to pin 2 of pmod3
+https://github.com/mattvenn/first-fpga-pcb
 
-enable serial with raspi-config
-reset with fomu-flash -r
-press the reset button on dev board
-miniterm.py /dev/serial0 115200
+* add SB_IO pullup on hold pin of flash, otherwise noise will randomly stop the flash
+* change memory offset for faster loading with fomu
+* change PROGADDR_RESET in picosoc.v to 0x40000 (256k)
+* change FLASH (rx)      : ORIGIN = 0x00040000, LENGTH = 0x400000 /* entire flash, 4 MiB */
 
-add serial pins to board v3?
+## raspi setup
 
-change memory offset for faster loading with fomu
-change PROGADDR_RESET in picosoc.v to 0x40000 (256k)
-change FLASH (rx)      : ORIGIN = 0x00040000, LENGTH = 0x400000 /* entire flash, 4 MiB */
+* connect serial tx (pin 8) to pin 1 (top right pin) of pmod3
+* connect serial rx (pin 10) to pin 2 of pmod3
+* enable serial with raspi-config
+* program with make prog-pi-fpga (scp file to pi, fomu-flash -w file, fomu-flash -r)
+* press the reset button on dev board 
+* miniterm.py /dev/serial0 115200
+
+SW1 acts as external reset. Not sure why it's needed. Tried to increase the reset timer in hx8kdemo.v but it never seems to self reset without the external button.
 
 PicoSoC - A simple example SoC using PicoRV32
 =============================================
