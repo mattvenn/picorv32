@@ -18,6 +18,10 @@ https://github.com/mattvenn/first-fpga-pcb
 
 SW1 acts as external reset. Not sure why it's needed. Tried to increase the reset timer in hx8kdemo.v but it never seems to self reset without the external button.
 
+## wishbone demo
+
+need to clone --recursive or init submodules to get the wishbone led module
+
 PicoSoC - A simple example SoC using PicoRV32
 =============================================
 
