@@ -1,0 +1,50 @@
+[*]
+[*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
+[*] Sat Apr 18 16:22:43 2020
+[*]
+[dumpfile] "/home/matt/work/fpga/picorv32/picosoc/testbench.vcd"
+[dumpfile_mtime] "Sat Apr 18 16:19:22 2020"
+[dumpfile_size] 91026893
+[savefile] "/home/matt/work/fpga/picorv32/picosoc/picosoc.gtkw"
+[timestart] 22647900
+[size] 1867 1018
+[pos] -1 -1
+*-16.000000 22824100 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] testbench.
+[treeopen] testbench.uut.
+[treeopen] testbench.uut.soc.
+[sst_width] 438
+[signals_width] 392
+[sst_expanded] 1
+[sst_vpaned_height] 387
+@28
+testbench.clk
+testbench.ser_rx
+testbench.ser_tx
+@800022
+testbench.uut.leds[7:0]
+@28
+(0)testbench.uut.leds[7:0]
+(1)testbench.uut.leds[7:0]
+(2)testbench.uut.leds[7:0]
+(3)testbench.uut.leds[7:0]
+(4)testbench.uut.leds[7:0]
+(5)testbench.uut.leds[7:0]
+(6)testbench.uut.leds[7:0]
+(7)testbench.uut.leds[7:0]
+@1001200
+-group_end
+@200
+-
+@28
+testbench.uut.wb_buttons_leds_0.i_wb_cyc
+@29
+testbench.uut.wb_buttons_leds_0.i_wb_stb
+@22
+testbench.uut.wb_buttons_leds_0.i_wb_addr[31:0]
+testbench.uut.wb_buttons_leds_0.i_wb_data[31:0]
+@28
+testbench.uut.wb_buttons_leds_0.i_wb_we
+testbench.uut.wb_buttons_leds_0.o_wb_ack
+[pattern_trace] 1
+[pattern_trace] 0
