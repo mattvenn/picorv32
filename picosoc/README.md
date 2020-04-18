@@ -1,3 +1,14 @@
+pullup on hold
+
+connect serial tx (pin 8) to pin 1 (top right pin) of pmod3
+connect serial rx (pin 10) to pin 2 of pmod3
+
+enable serial with raspi-config
+reset with fomu-flash -r
+press the reset button on dev board
+miniterm.py /dev/serial0 115200
+
+add serial pins to board v3?
 
 PicoSoC - A simple example SoC using PicoRV32
 =============================================

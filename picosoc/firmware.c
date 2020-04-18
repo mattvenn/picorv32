@@ -666,13 +666,15 @@ void cmd_echo()
 void main()
 {
     reg_leds = 0; 
+    /*
     while(1)
     {
-        for(int i = 0; i < 1000; i ++) { /* delay */ }
+        for(int i = 0; i < 1000; i ++) { ;; }
         reg_leds ++;
         if(reg_leds == 255)
             reg_leds = 0;
     }
+    */
 
 	reg_leds = 31;
 	reg_uart_clkdiv = 104;

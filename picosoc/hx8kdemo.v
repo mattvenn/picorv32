@@ -59,7 +59,7 @@ module hx8kdemo (
 
 	SB_IO #(
 		.PIN_TYPE(6'b 1010_01),
-		.PULLUP(1'b 0)
+		.PULLUP({1'b 1, 1'b 1, 1'b0, 1'b0}) // hold pin needs a pullup
 	) flash_io_buf [3:0] (
 		.PACKAGE_PIN({flash_io3, flash_io2, flash_io1, flash_io0}),
 		.OUTPUT_ENABLE({flash_io3_oe, flash_io2_oe, flash_io1_oe, flash_io0_oe}),

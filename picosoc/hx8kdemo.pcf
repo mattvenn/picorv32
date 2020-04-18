@@ -15,8 +15,8 @@ set_io flash_io1 68
 set_io flash_io2 61
 set_io flash_io3 62
 
-set_io ser_tx 42  # raspi gpio16
-set_io ser_rx 43  # raspi gpio13
+set_io ser_tx 32  # -> gpio15 (rxd)
+set_io ser_rx 34  # -> gpio14 (txd)
 
 # pmod 4
 set_io debug_ser_tx 3
