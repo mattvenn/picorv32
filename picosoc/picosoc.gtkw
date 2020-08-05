@@ -1,27 +1,29 @@
 [*]
-[*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
-[*] Sat Apr 18 16:22:43 2020
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Wed Aug  5 17:30:18 2020
 [*]
 [dumpfile] "/home/matt/work/fpga/picorv32/picosoc/testbench.vcd"
-[dumpfile_mtime] "Sat Apr 18 16:19:22 2020"
-[dumpfile_size] 91026893
+[dumpfile_mtime] "Wed Aug  5 17:21:13 2020"
+[dumpfile_size] 89096078
 [savefile] "/home/matt/work/fpga/picorv32/picosoc/picosoc.gtkw"
-[timestart] 22647900
-[size] 1867 1018
-[pos] -1 -1
-*-16.000000 22824100 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 1935210000
+[size] 2507 1538
+[pos] 53 34
+*-21.000000 1950170000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] testbench.
 [treeopen] testbench.uut.
 [treeopen] testbench.uut.soc.
-[sst_width] 438
+[treeopen] testbench.uut.soc.spimemio.
+[sst_width] 263
 [signals_width] 392
 [sst_expanded] 1
-[sst_vpaned_height] 387
+[sst_vpaned_height] 629
 @28
 testbench.clk
 testbench.ser_rx
+testbench.uut.soc.resetn
 testbench.ser_tx
-@800022
+@c00024
 testbench.uut.leds[7:0]
 @28
 (0)testbench.uut.leds[7:0]
@@ -32,19 +34,45 @@ testbench.uut.leds[7:0]
 (5)testbench.uut.leds[7:0]
 (6)testbench.uut.leds[7:0]
 (7)testbench.uut.leds[7:0]
-@1001200
+@22
+testbench.uut.soc.spimemio.addr[23:0]
+@1401200
 -group_end
 @200
 -
-@28
-testbench.uut.wb_buttons_leds_0.i_wb_cyc
-@29
-testbench.uut.wb_buttons_leds_0.i_wb_stb
 @22
-testbench.uut.wb_buttons_leds_0.i_wb_addr[31:0]
-testbench.uut.wb_buttons_leds_0.i_wb_data[31:0]
+testbench.uut.soc.spimemio.din_data[7:0]
+testbench.uut.soc.spimemio.dout_data[7:0]
 @28
-testbench.uut.wb_buttons_leds_0.i_wb_we
-testbench.uut.wb_buttons_leds_0.o_wb_ack
+testbench.uut.soc.spimemio.dout_valid
+testbench.uut.soc.spimemio.xfer.clk
+testbench.uut.soc.spimemio.clk
+testbench.uut.soc.spimemio.config_qspi
+@22
+>7200000
+testbench.spiflash.spi_cmd[7:0]
+>0
+testbench.spiflash.spi_addr[23:0]
+@24
+testbench.spiflash.spi_out[7:0]
+@22
+testbench.spiflash.spi_in[7:0]
+@28
+testbench.spiflash.clk
+testbench.spiflash.csb
+@420
+testbench.spiflash.bytecount
+@28
+testbench.spiflash.io0
+testbench.spiflash.io1
+@22
+testbench.spiflash.spi_in[7:0]
+@23
+testbench.spiflash.spi_out[7:0]
 [pattern_trace] 1
 [pattern_trace] 0
+!100000@@
+?"64
+@25
+testbench.spiflash.spi_out[7:0]
+!!

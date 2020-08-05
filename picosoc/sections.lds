@@ -8,7 +8,7 @@
 
 MEMORY
 {
-    FLASH (rx)      : ORIGIN = 0x00040000, LENGTH = 0x400000 /* entire flash, 4 MiB */
+    FLASH (rx)      : ORIGIN = 0x00100000, LENGTH = 0x400000 /* entire flash, 4 MiB */
     RAM (xrw)       : ORIGIN = 0x00000000, LENGTH = MEM_TOTAL
 }
 

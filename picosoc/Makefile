@@ -1,20 +1,27 @@
-PI_ADDR = pi@fpga.local
+PI_ADDR = pi@raspberrypi.local
 FOMU_FLASH = ~/fomu-flash/fomu-flash
 
 CROSS=riscv64-unknown-elf-
 CFLAGS=-mabi=ilp32 
 
+CONSTR=mv_ecp.lpf
+DEVICE=12k
+
 # ---- iCE40 HX8K Breakout Board ----
 
-hx8kdemo_all.bin: hx8kdemo.bin hx8kdemo_fw.bin
-	cp hx8kdemo.bin hx8kdemo.padded.bin
-	dd if=/dev/zero of=hx8kdemo.padded.bin bs=1 count=1 seek=262143
-	cat hx8kdemo.padded.bin hx8kdemo_fw.bin > hx8kdemo_all.bin 
+hx8kdemo_all.bin: hx8kdemo.bit hx8kdemo_fw.bin
+	cp hx8kdemo.bit hx8kdemo.padded.bit
+	dd if=/dev/zero of=hx8kdemo.padded.bit bs=1 count=1 seek=1048575
+	cat hx8kdemo.padded.bit hx8kdemo_fw.bin > hx8kdemo_all.bin 
 
-prog-pi-fpga: hx8kdemo_all.bin
+ecp5prog: hx8kdemo_all.bin
 	scp $< $(PI_ADDR):/tmp/$<
 	ssh $(PI_ADDR) "sudo $(FOMU_FLASH) -w /tmp/$< && sudo $(FOMU_FLASH) -r"
 	echo "now press sw1 on dev board to reset"
+
+ecp5prog_fw: hx8kdemo_fw.bin
+	scp $< $(PI_ADDR):/tmp/$<
+	ssh $(PI_ADDR) "sudo $(FOMU_FLASH) -w /tmp/$< -a 1048576 && sudo $(FOMU_FLASH) -r"
 
 hx8ksim: hx8kdemo_tb.vvp hx8kdemo_fw.hex
 	vvp -N $< +firmware=hx8kdemo_fw.hex
@@ -23,9 +30,9 @@ hx8ksynsim: hx8kdemo_syn_tb.vvp hx8kdemo_fw.hex
 	vvp -N $< +firmware=hx8kdemo_fw.hex
 
 hx8kdemo.json: hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v wishbone-button-leds/wb_buttons_leds.v
-	yosys -ql hx8kdemo.log -p 'synth_ice40 -top hx8kdemo -json hx8kdemo.json' $^
+	yosys -ql hx8kdemo.log -p 'synth_ecp5 -top hx8kdemo -json hx8kdemo.json' $^
 
-hx8kdemo_tb.vvp: hx8kdemo_tb.v hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v spiflash.v wb_buttons_leds.v
+hx8kdemo_tb.vvp: hx8kdemo_tb.v hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v spiflash.v 
 	iverilog -s testbench -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v`
 
 hx8kdemo_syn_tb.vvp: hx8kdemo_tb.v hx8kdemo_syn.v spiflash.v
@@ -34,12 +41,16 @@ hx8kdemo_syn_tb.vvp: hx8kdemo_tb.v hx8kdemo_syn.v spiflash.v
 hx8kdemo_syn.v: hx8kdemo.json
 	yosys -p 'read_json -wideports hx8kdemo.json; write_verilog hx8kdemo_syn.v'
 
-hx8kdemo.asc: hx8kdemo.pcf hx8kdemo.json
-	nextpnr-ice40 --freq 13 --package tq144:4k --hx8k --asc hx8kdemo.asc --pcf hx8kdemo.pcf --json hx8kdemo.json
+hx8kdemo_out.config: hx8kdemo.json
+	#nextpnr-ice40 --freq 13 --package tq144:4k --hx8k --asc hx8kdemo.asc --pcf hx8kdemo.pcf --json hx8kdemo.json
+	/usr/local/bin/nextpnr-ecp5 -l nextpnr.log --json $< --lpf $(CONSTR) --textcfg $@ --$(DEVICE) --package CABGA256 --speed 8
 
 hx8kdemo.bin: hx8kdemo.asc
 	icetime -d hx8k -c 12 -mtr hx8kdemo.rpt hx8kdemo.asc
 	icepack hx8kdemo.asc hx8kdemo.bin
+
+hx8kdemo.bit: hx8kdemo_out.config
+	/usr/bin/ecppack --svf-rowsize 100000 --svf hx8kdemo.svf --input $< --bit $@
 
 hx8kprog: hx8kdemo.bin hx8kdemo_fw.bin
 	iceprog hx8kdemo.bin
@@ -52,7 +63,7 @@ hx8kdemo_sections.lds: sections.lds
 	$(CROSS)cpp -P -DHX8KDEMO -o $@ $^
 
 hx8kdemo_fw.elf: hx8kdemo_sections.lds start.s firmware.c
-	$(CROSS)gcc $(CFLAGS) -DHX8KDEMO -march=rv32imc -Wl,-Bstatic,-T,hx8kdemo_sections.lds,--strip-debug -ffreestanding -nostdlib -o hx8kdemo_fw.elf start.s firmware.c
+	$(CROSS)gcc $(CFLAGS) -DECP5 -march=rv32imc -Wl,-Bstatic,-T,hx8kdemo_sections.lds,--strip-debug -ffreestanding -nostdlib -o hx8kdemo_fw.elf start.s firmware.c
 
 hx8kdemo_fw.hex: hx8kdemo_fw.elf
 	$(CROSS)objcopy -O verilog hx8kdemo_fw.elf hx8kdemo_fw.hex

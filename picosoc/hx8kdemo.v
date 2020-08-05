@@ -1,3 +1,4 @@
+`default_nettype none
 /*
  *  PicoSoC - A simple example SoC using PicoRV32
  *
@@ -16,25 +17,26 @@
  *  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  */
-`default_nettype none
-
+//`define ECP5
 module hx8kdemo (
 	input clk,
-    input reset_button,
 
 	output ser_tx,
 	input ser_rx,
+    input reset_button,
 
 	output [7:0] leds,
-    input [2:0] buttons,
 
 	output flash_csb,
-	output flash_clk,
+    `ifndef ECP5
+    output flash_clk,
+    `endif
 	inout  flash_io0,
 	inout  flash_io1,
 	inout  flash_io2,
-	inout  flash_io3,
+	inout  flash_io3
 
+/*
 	output debug_ser_tx,
 	output debug_ser_rx,
 
@@ -44,6 +46,7 @@ module hx8kdemo (
 	output debug_flash_io1,
 	output debug_flash_io2,
 	output debug_flash_io3
+*/
 );
 	reg [5:0] reset_cnt = 0;
 	wire resetn = &reset_cnt;
@@ -59,15 +62,28 @@ module hx8kdemo (
 	wire flash_io2_oe, flash_io2_do, flash_io2_di;
 	wire flash_io3_oe, flash_io3_do, flash_io3_di;
 
-	SB_IO #(
-		.PIN_TYPE(6'b 1010_01),
-		.PULLUP({1'b 1, 1'b 1, 1'b0, 1'b0}) // hold pin needs a pullup
-	) flash_io_buf [3:0] (
-		.PACKAGE_PIN({flash_io3, flash_io2, flash_io1, flash_io0}),
-		.OUTPUT_ENABLE({flash_io3_oe, flash_io2_oe, flash_io1_oe, flash_io0_oe}),
-		.D_OUT_0({flash_io3_do, flash_io2_do, flash_io1_do, flash_io0_do}),
-		.D_IN_0({flash_io3_di, flash_io2_di, flash_io1_di, flash_io0_di})
-	);
+    `ifdef ECP5
+	wire flash_clk;
+    USRMCLK u1 (.USRMCLKI(flash_clk), .USRMCLKTS(flash_csb)) /* synthesis syn_noprune=1 */;
+    BBPU flash_io_buf[3:0] (
+        .B({flash_io3, flash_io2, flash_io1, flash_io0}),
+        .T({!flash_io3_oe,!flash_io2_oe,!flash_io1_oe, !flash_io0_oe}),
+        .I({flash_io3_do, flash_io2_do, flash_io1_do, flash_io0_do}),
+        .O({flash_io3_di, flash_io2_di, flash_io1_di, flash_io0_di})
+    );
+    `else
+        // this needed for sim as ecp5 sim models not available
+
+           SB_IO #(
+                   .PIN_TYPE(6'b 1010_01),
+                   .PULLUP(1'b 0)
+           ) flash_io_buf [3:0] (
+                   .PACKAGE_PIN({flash_io3, flash_io2, flash_io1, flash_io0}),
+                   .OUTPUT_ENABLE({flash_io3_oe, flash_io2_oe, flash_io1_oe, flash_io0_oe}),
+                   .D_OUT_0({flash_io3_do, flash_io2_do, flash_io1_do, flash_io0_do}),
+                   .D_IN_0({flash_io3_di, flash_io2_di, flash_io1_di, flash_io0_di})
+           );
+    `endif
 
 	wire        iomem_valid;
 	reg         iomem_ready;
@@ -76,88 +92,22 @@ module hx8kdemo (
 	wire [31:0] iomem_wdata;
 	reg  [31:0] iomem_rdata;
 
-	reg [31:0] wbm_adr_o;
-	reg [31:0] wbm_dat_o;
-	wire [31:0] wbm_dat_i;
-	reg wbm_we_o;
-	reg [3:0] wbm_sel_o;
-	reg wbm_stb_o;
-	wire wbm_ack_i;
-	reg wbm_cyc_o;
-
-    // same address as where the gpio leds were
-    wb_buttons_leds #(.address(32'h03_00_00_00)) wb_buttons_leds_0 (
-        .clk        (clk),
-        .reset      (~resetn),
-        .i_wb_cyc   (wbm_cyc_o),
-        .i_wb_stb   (wbm_stb_o),
-        .i_wb_we    (wbm_we_o),
-        .i_wb_addr  (wbm_adr_o),
-        .i_wb_data  (wbm_dat_o),
-        .o_wb_ack   (wbm_ack_i),
-        .o_wb_data  (wbm_dat_i),
-        .buttons    (buttons),
-        .leds       (leds)
-    );
-
-	localparam IDLE = 2'b00;
-	localparam WBSTART = 2'b01;
-	localparam WBEND = 2'b10;
-
-	reg [1:0] state;
-
-	wire we;
-	assign we = (iomem_wstrb[0] | iomem_wstrb[1] | iomem_wstrb[2] | iomem_wstrb[3]);
+	reg [31:0] gpio;
+	assign leds = gpio;
 
 	always @(posedge clk) begin
-		if (~resetn) begin
-			wbm_adr_o <= 0;
-			wbm_dat_o <= 0;
-			wbm_we_o <= 0;
-			wbm_sel_o <= 0;
-			wbm_stb_o <= 0;
-			wbm_cyc_o <= 0;
-			state <= IDLE;
+		if (!resetn) begin
+			gpio <= 0;
 		end else begin
-			case (state)
-				IDLE: begin
-					if (iomem_valid) begin
-						wbm_adr_o <= iomem_addr;
-						wbm_dat_o <= iomem_wdata;
-						wbm_we_o <= we;
-						wbm_sel_o <= iomem_wstrb;
-
-						wbm_stb_o <= 1'b1;
-						wbm_cyc_o <= 1'b1;
-						state <= WBSTART;
-					end else begin
-						iomem_ready <= 1'b0;
-
-						wbm_stb_o <= 1'b0;
-						wbm_cyc_o <= 1'b0;
-						wbm_we_o <= 1'b0;
-					end
-				end
-				WBSTART:begin
-					if (wbm_ack_i) begin
-						iomem_rdata <= wbm_dat_i;
-						iomem_ready <= 1'b1;
-
-						state <= WBEND;
-
-						wbm_stb_o <= 1'b0;
-						wbm_cyc_o <= 1'b0;
-						wbm_we_o <= 1'b0;
-					end
-				end
-				WBEND: begin
-					iomem_ready <= 1'b0;
-
-					state <= IDLE;
-				end
-				default:
-					state <= IDLE;
-			endcase
+			iomem_ready <= 0;
+			if (iomem_valid && !iomem_ready && iomem_addr[31:24] == 8'h 03) begin
+				iomem_ready <= 1;
+				iomem_rdata <= gpio;
+				if (iomem_wstrb[0]) gpio[ 7: 0] <= iomem_wdata[ 7: 0];
+				if (iomem_wstrb[1]) gpio[15: 8] <= iomem_wdata[15: 8];
+				if (iomem_wstrb[2]) gpio[23:16] <= iomem_wdata[23:16];
+				if (iomem_wstrb[3]) gpio[31:24] <= iomem_wdata[31:24];
+			end
 		end
 	end
 
@@ -198,6 +148,7 @@ module hx8kdemo (
 		.iomem_rdata  (iomem_rdata )
 	);
 
+/*
 	assign debug_ser_tx = ser_tx;
 	assign debug_ser_rx = ser_rx;
 
@@ -207,5 +158,5 @@ module hx8kdemo (
 	assign debug_flash_io1 = flash_io1_di;
 	assign debug_flash_io2 = flash_io2_di;
 	assign debug_flash_io3 = flash_io3_di;
-
+*/
 endmodule
