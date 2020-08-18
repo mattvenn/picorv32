@@ -5,7 +5,7 @@ CROSS=riscv64-unknown-elf-
 CFLAGS=-mabi=ilp32 
 
 CONSTR=mv_ecp.lpf
-DEVICE=12k
+DEVICE=45k
 
 # ---- iCE40 HX8K Breakout Board ----
 
@@ -17,11 +17,13 @@ hx8kdemo_all.bin: hx8kdemo.bit hx8kdemo_fw.bin
 ecp5prog: hx8kdemo_all.bin
 	scp $< $(PI_ADDR):/tmp/$<
 	ssh $(PI_ADDR) "sudo $(FOMU_FLASH) -w /tmp/$< && sudo $(FOMU_FLASH) -r"
+    #&& ~/reset_bcm_spi.sh"
 	echo "now press sw1 on dev board to reset"
 
 ecp5prog_fw: hx8kdemo_fw.bin
 	scp $< $(PI_ADDR):/tmp/$<
 	ssh $(PI_ADDR) "sudo $(FOMU_FLASH) -w /tmp/$< -a 1048576 && sudo $(FOMU_FLASH) -r"
+    #&& ~/reset_bcm_spi.sh"
 
 hx8ksim: hx8kdemo_tb.vvp hx8kdemo_fw.hex
 	vvp -N $< +firmware=hx8kdemo_fw.hex
@@ -29,7 +31,7 @@ hx8ksim: hx8kdemo_tb.vvp hx8kdemo_fw.hex
 hx8ksynsim: hx8kdemo_syn_tb.vvp hx8kdemo_fw.hex
 	vvp -N $< +firmware=hx8kdemo_fw.hex
 
-hx8kdemo.json: hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v wishbone-button-leds/wb_buttons_leds.v
+hx8kdemo.json: hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v challenge.v wb_multi_serial.v
 	yosys -ql hx8kdemo.log -p 'synth_ecp5 -top hx8kdemo -json hx8kdemo.json' $^
 
 hx8kdemo_tb.vvp: hx8kdemo_tb.v hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v spiflash.v 
@@ -63,7 +65,7 @@ hx8kdemo_sections.lds: sections.lds
 	$(CROSS)cpp -P -DHX8KDEMO -o $@ $^
 
 hx8kdemo_fw.elf: hx8kdemo_sections.lds start.s firmware.c
-	$(CROSS)gcc $(CFLAGS) -DECP5 -march=rv32imc -Wl,-Bstatic,-T,hx8kdemo_sections.lds,--strip-debug -ffreestanding -nostdlib -o hx8kdemo_fw.elf start.s firmware.c
+	$(CROSS)gcc $(CFLAGS) -DICEBREAKER -march=rv32imc -Wl,-Bstatic,-T,hx8kdemo_sections.lds,--strip-debug -ffreestanding -nostdlib -o hx8kdemo_fw.elf start.s firmware.c
 
 hx8kdemo_fw.hex: hx8kdemo_fw.elf
 	$(CROSS)objcopy -O verilog hx8kdemo_fw.elf hx8kdemo_fw.hex

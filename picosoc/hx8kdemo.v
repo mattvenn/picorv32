@@ -17,7 +17,7 @@
  *  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  */
-//`define ECP5
+`define ECP5
 module hx8kdemo (
 	input clk,
 
@@ -26,6 +26,9 @@ module hx8kdemo (
     input reset_button,
 
 	output [7:0] leds,
+
+    output led1,
+    output led2,
 
 	output flash_csb,
     `ifndef ECP5
@@ -114,6 +117,9 @@ module hx8kdemo (
 	picosoc soc (
 		.clk          (clk         ),
 		.resetn       (resetn      ),
+        
+        .led1         (led1        ),
+        .led2         (led2        ),
 
 		.ser_tx       (ser_tx      ),
 		.ser_rx       (ser_rx      ),

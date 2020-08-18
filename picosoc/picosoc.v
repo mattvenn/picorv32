@@ -50,6 +50,7 @@ module picosoc (
 
 	output ser_tx,
 	input  ser_rx,
+    output led1, led2,
 
 	output flash_csb,
 	output flash_clk,
@@ -201,6 +202,8 @@ module picosoc (
 		.reg_dat_do  (simpleuart_reg_dat_do),
 		.reg_dat_wait(simpleuart_reg_dat_wait)
 	);
+
+    chip chip0 (.io_12_31_1(clk), .io_13_0_1(ser_tx), .io_17_0_0(led1), .io_13_31_0(led2));
 
 	always @(posedge clk)
 		ram_ready <= mem_valid && !mem_ready && mem_addr < 4*MEM_WORDS;

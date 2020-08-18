@@ -23,7 +23,7 @@
 #ifdef ECP5
 #  define MEM_TOTAL 0x200 /* 2kb */
 #elif ICEBREAKER
-#  define MEM_TOTAL 0x20000 /* 128 KB */
+#  define MEM_TOTAL 0x200 /* 128 KB */
 #elif HX8KDEMO
 #  define MEM_TOTAL 0x200 /* 2 KB */
 #else
@@ -160,19 +160,18 @@ void enable_flash_crm()
 void set_flash_qspi_flag()
 {
 	uint8_t buffer[8];
-
 	// Read Configuration Registers (RDCR1 05h)
+    /*
 	buffer[0] = 0x05; // read status command
 	buffer[1] = 0x00; // rdata
 	flashio(buffer, 2, 0);
 	uint8_t sr = buffer[1];
+    */
 
-	// write status 0x01
+
 	buffer[0] = 0x01; // write status command
-	buffer[1] = sr | 64; // bit 6 Enable QSPI
-	reg_leds = 64;
+	buffer[1] = 0x40; // bit 6 Enable QSPI
 	flashio(buffer, 2, 0x06); // 0x06 write enable
-	reg_leds = 65;
 }
 
 void set_flash_mode_spi()
@@ -750,6 +749,14 @@ void cmd_echo()
 
 // --------------------------------------------------------
 
+void counter()
+{
+    reg_leds = 0;
+    while(true) {
+        reg_leds ++;
+        for(int i = 0; i < 2000; i ++) { ;; }
+    }
+}
 void main()
 {
 	reg_leds = 31;
@@ -757,7 +764,7 @@ void main()
 	print("Booting..\n");
 
 	reg_leds = 63;
-	set_flash_qspi_flag();
+//	set_flash_qspi_flag();
 
 	reg_leds = 127;
 	while (getchar_prompt("Press ENTER to continue..\n") != '\r') { /* wait */ }
@@ -800,6 +807,7 @@ void main()
 		print("   [S] Print SPI state\n");
 		print("   [e] Echo UART\n");
 		print("   [q] set QE mode\n");
+		print("   [h] send passphrase\n");
 		print("\n");
 
 		for (int rep = 10; rep > 0; rep--)
@@ -849,8 +857,13 @@ void main()
 				cmd_echo();
 				break;
 			case 'q':
-                set_flash_qspi_flag();
+                counter();
+               // set_flash_qspi_flag();
 				break;
+			case 'h':
+                print("hackme12");
+                for(int i = 0; i < 10000; i ++) { ;; }
+                break;
 			default:
 				continue;
 			}

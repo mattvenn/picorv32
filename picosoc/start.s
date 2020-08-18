@@ -149,7 +149,19 @@ addi a1, a1, -1
 j    flashio_worker_L1
 flashio_worker_L3:
 
+
+#beqz a2, flashio_worker_L7
+# set CS high
+#sb   t1, 0(t0)
+
+#li   t5, 750
+#flashio_worker_L6:
+#nop
+#addi t5, t5, -1
+#bnez t5, flashio_worker_L6
+
 # Back to MEMIO mode
+flashio_worker_L7:
 li   t1, 0x80
 sb   t1, 3(t0)
 
