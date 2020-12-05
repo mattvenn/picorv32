@@ -97,6 +97,8 @@ module hx8kdemo (
 
 	reg [31:0] gpio;
 	assign leds = gpio;
+    assign led1 = !gpio[0];
+    assign led2 = !gpio[1];
 
 	always @(posedge clk) begin
 		if (!resetn) begin

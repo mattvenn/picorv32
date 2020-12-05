@@ -31,7 +31,7 @@ hx8ksim: hx8kdemo_tb.vvp hx8kdemo_fw.hex
 hx8ksynsim: hx8kdemo_syn_tb.vvp hx8kdemo_fw.hex
 	vvp -N $< +firmware=hx8kdemo_fw.hex
 
-hx8kdemo.json: hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v challenge.v wb_multi_serial.v
+hx8kdemo.json: hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v 
 	yosys -ql hx8kdemo.log -p 'synth_ecp5 -top hx8kdemo -json hx8kdemo.json' $^
 
 hx8kdemo_tb.vvp: hx8kdemo_tb.v hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v spiflash.v 
@@ -52,7 +52,7 @@ hx8kdemo.bin: hx8kdemo.asc
 	icepack hx8kdemo.asc hx8kdemo.bin
 
 hx8kdemo.bit: hx8kdemo_out.config
-	/usr/bin/ecppack --svf-rowsize 100000 --svf hx8kdemo.svf --input $< --bit $@
+	/usr/bin/ecppack --compress --svf-rowsize 100000 --svf hx8kdemo.svf --input $< --bit $@
 
 hx8kprog: hx8kdemo.bin hx8kdemo_fw.bin
 	iceprog hx8kdemo.bin
