@@ -87,6 +87,88 @@ module ecp5demo (
            );
     `endif
 
+    // same address as where the gpio leds were
+    wb_buttons_leds #(.BASE_ADDRESS(32'h03_00_00_00)) wb_buttons_leds_0 (
+        .clk        (clk),
+        .reset      (~resetn),
+        .i_wb_cyc   (wbm_cyc_o),
+        .i_wb_stb   (wbm_stb_o),
+        .i_wb_we    (wbm_we_o),
+        .i_wb_addr  (wbm_adr_o),
+        .i_wb_data  (wbm_dat_o),
+        .o_wb_ack   (wbm_ack_i),
+        .o_wb_data  (wbm_dat_i),
+        //.buttons    (buttons),
+        .leds       (wb_leds)
+    );
+
+    wire [7:0] wb_leds;
+    assign leds = wb_leds;
+    assign led1 = leds[0];
+    assign led2 = leds[1];
+    
+	localparam IDLE = 2'b00;
+	localparam WBSTART = 2'b01;
+	localparam WBEND = 2'b10;
+
+	reg [1:0] state;
+
+	wire we;
+	assign we = (iomem_wstrb[0] | iomem_wstrb[1] | iomem_wstrb[2] | iomem_wstrb[3]);
+
+	always @(posedge clk) begin
+		if (~resetn) begin
+			wbm_adr_o <= 0;
+			wbm_dat_o <= 0;
+			wbm_we_o <= 0;
+			wbm_sel_o <= 0;
+			wbm_stb_o <= 0;
+			wbm_cyc_o <= 0;
+			state <= IDLE;
+		end else begin
+			case (state)
+				IDLE: begin
+                    // wishbone is 0x0300_0000 and above
+					if (iomem_valid & iomem_addr[31:24] >= 8'h03) begin
+						wbm_adr_o <= iomem_addr;
+						wbm_dat_o <= iomem_wdata;
+						wbm_we_o <= we;
+						wbm_sel_o <= iomem_wstrb;
+
+						wbm_stb_o <= 1'b1;
+						wbm_cyc_o <= 1'b1;
+						state <= WBSTART;
+					end else begin
+						iomem_ready <= 1'b0;
+
+						wbm_stb_o <= 1'b0;
+						wbm_cyc_o <= 1'b0;
+						wbm_we_o <= 1'b0;
+					end
+				end
+				WBSTART:begin
+					if (wbm_ack_i) begin
+						iomem_rdata <= wbm_dat_i;
+						iomem_ready <= 1'b1;
+
+						state <= WBEND;
+
+						wbm_stb_o <= 1'b0;
+						wbm_cyc_o <= 1'b0;
+						wbm_we_o <= 1'b0;
+					end
+				end
+				WBEND: begin
+					iomem_ready <= 1'b0;
+
+					state <= IDLE;
+				end
+				default:
+					state <= IDLE;
+			endcase
+		end
+	end
+
 	wire        iomem_valid;
 	reg         iomem_ready;
 	wire [3:0]  iomem_wstrb;
@@ -94,11 +176,23 @@ module ecp5demo (
 	wire [31:0] iomem_wdata;
 	reg  [31:0] iomem_rdata;
 
+    /*
 	reg [31:0] gpio;
 	assign leds = gpio;
     assign led1 = !gpio[0];
     assign led2 = !gpio[1];
+    */
 
+	reg [31:0] wbm_adr_o;
+	reg [31:0] wbm_dat_o;
+	wire [31:0] wbm_dat_i;
+	reg wbm_we_o;
+	reg [3:0] wbm_sel_o;
+	reg wbm_stb_o;
+	wire wbm_ack_i;
+	reg wbm_cyc_o;
+
+    /*
 	always @(posedge clk) begin
 		if (!resetn) begin
 			gpio <= 0;
@@ -114,6 +208,7 @@ module ecp5demo (
 			end
 		end
 	end
+    */
 
 	picosoc soc (
 		.clk          (clk         ),

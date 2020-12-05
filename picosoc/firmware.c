@@ -448,7 +448,8 @@ void cmd_echo()
 void counter()
 {
     reg_leds = 0;
-    while(true) {
+    int i = 0;
+    for(i = 0; i < 255; i ++){
         reg_leds ++;
         for(int i = 0; i < 2000; i ++) { ;; }
     }
@@ -503,6 +504,7 @@ void main()
 		print("   [S] Print SPI state\n");
 		print("   [e] Echo UART\n");
 		print("   [h] say hi\n");
+		print("   [q] count leds with wishbone\n");
 		print("\n");
 
 		for (int rep = 10; rep > 0; rep--)
@@ -553,6 +555,10 @@ void main()
 				break;
 			case 'h':
                 print("hello matt\n");
+                break;
+			case 'q':
+                counter();
+                break;
 			default:
 				continue;
 			}
