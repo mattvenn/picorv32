@@ -25,6 +25,7 @@ module ecp5demo (
     input reset_button,
 
 	output [7:0] leds,
+    output [7:0] pmod2,
 
     output led1,
     output led2,
@@ -96,11 +97,55 @@ module ecp5demo (
         .i_wb_we    (wbm_we_o),
         .i_wb_addr  (wbm_adr_o),
         .i_wb_data  (wbm_dat_o),
-        .o_wb_ack   (wbm_ack_i),
-        .o_wb_data  (wbm_dat_i),
+        .o_wb_ack   (leds_wbm_ack_i),
+        .o_wb_data  (leds_wbm_dat_i),
         //.buttons    (buttons),
         .leds       (wb_leds)
     );
+
+    multi_project_harness #(
+    // address_active: write to this memory address to select the project
+    .address_active ( 32'h0310_0000),
+    .address_oeb0   ( 32'h0310_0004),
+    .address_oeb1   ( 32'h0310_0008),
+    // each project gets 0x100 bytes memory space
+    .address_ws2812 ( 32'h0310_0100),
+    .address_7seg   ( 32'h0310_0200),
+    // h30000300 reserved for proj_3: spinet
+    .address_freq   ( 32'h0310_0400),
+    .address_watch  ( 32'h0310_0500),
+    .num_projects   ( 8)) mph (
+
+    // Wishbone Slave ports (WB MI A)
+    .wb_clk_i       (clk),             // clock
+    .wb_rst_i       (~resetn),             // reset
+    .wbs_stb_i      (wbm_stb_o),            // strobe - wb_valid data
+    .wbs_cyc_i      (wbm_cyc_o),            // cycle - high when during a request
+    .wbs_we_i       (|wbm_we_o),             // write enable
+    .wbs_sel_i      (wbm_we_o),      // which byte to read/write
+    .wbs_dat_i      (wbm_dat_o),     // data in
+    .wbs_adr_i      (wbm_adr_o),     // address
+    .wbs_ack_o      (mph_wbm_ack_i),           // ack
+    .wbs_dat_o      (mph_wbm_dat_i),    // data out
+
+    // Logic Analyzer Signals
+    .la_data_in(0),
+ //   input  wire [127:0] la_data_in,
+  //  output wire [127:0] la_data_out,
+   // input  wire [127:0] la_oen,
+
+    // IOs - avoid using 0-7 as they are dual purpose and maybe connected to other things
+//    input  wire [`MPRJ_IO_PADS-1:0] io_in,
+    .io_out(mph_io_out)
+  //  output wire [`MPRJ_IO_PADS-1:0] io_oeb // active low!
+
+    );
+    wire [37:0] mph_io_out;
+    assign pmod2 = mph_io_out[15:8]; // put first 8 usable outputs onto pmod2
+    wire [31:0] mph_wbm_dat_i, leds_wbm_dat_i;
+    wire mph_wbm_ack_i, leds_wbm_ack_i;
+    assign wbm_ack_i = mph_wbm_ack_i | leds_wbm_ack_i; 
+    assign wbm_dat_i = mph_wbm_dat_i | leds_wbm_dat_i; 
 
     wire [7:0] wb_leds;
     assign leds = wb_leds;

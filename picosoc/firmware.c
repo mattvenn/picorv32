@@ -30,6 +30,9 @@ extern uint32_t sram;
 #define reg_uart_clkdiv (*(volatile uint32_t*)0x02000004)
 #define reg_uart_data (*(volatile uint32_t*)0x02000008)
 #define reg_leds (*(volatile uint32_t*)0x03000000)
+#define reg_mph_active (*(volatile uint32_t*)0x03100000)
+#define reg_mph_7seg   (*(volatile uint32_t*)0x03100200)
+#define reg_mph_ws2812   (*(volatile uint32_t*)0x03100100)
 
 // --------------------------------------------------------
 
@@ -456,9 +459,12 @@ void counter()
 }
 void main()
 {
+    reg_mph_active = 1;
+                reg_mph_ws2812 = 0x07AABBCC;
 	reg_leds = 31;
 	reg_uart_clkdiv = 139;
 	print("Booting..\n");
+
 
 	reg_leds = 63;
 //	set_flash_qspi_flag();
@@ -491,20 +497,14 @@ void main()
 
 		print("Select an action:\n");
 		print("\n");
-		print("   [1] Read SPI Flash ID\n");
-		print("   [2] Read SPI Config Regs\n");
-		print("   [3] Switch to default mode\n");
-		print("   [4] Switch to Dual I/O mode\n");
-		print("   [5] Switch to Quad I/O mode\n");
-		print("   [6] Switch to Quad DDR mode\n");
-		print("   [7] Toggle continuous read mode\n");
-		print("   [9] Run simplistic benchmark\n");
-		print("   [0] Benchmark all configs\n");
-		print("   [M] Run Memtest\n");
-		print("   [S] Print SPI state\n");
-		print("   [e] Echo UART\n");
-		print("   [h] say hi\n");
-		print("   [q] count leds with wishbone\n");
+		print("   [0] 7seg\n");
+		print("   [1] ws2812\n");
+		print("   [2] vga clock\n");
+		print("   [3] spinet \n");
+		print("   [4] asicfreq \n");
+		print("   [5] watch\n");
+		print("   [6] challenge\n");
+		print("   [7] mm2hdmi\n");
 		print("\n");
 
 		for (int rep = 10; rep > 0; rep--)
@@ -517,47 +517,24 @@ void main()
 
 			switch (cmd)
 			{
-			case '1':
-				cmd_read_flash_id();
-				break;
-			case '2':
-				cmd_read_flash_regs();
-				break;
-			case '3':
-				set_flash_mode_spi();
-				break;
-			case '4':
-				set_flash_mode_dual();
-				break;
-			case '5':
-				set_flash_mode_quad();
-				break;
-			case '6':
-				set_flash_mode_qddr();
-				break;
-			case '7':
-				reg_spictrl = reg_spictrl ^ 0x00100000;
-				break;
-			case '9':
-				cmd_benchmark(true, 0);
-				break;
 			case '0':
-				cmd_benchmark_all();
-				break;
-			case 'M':
-				cmd_memtest();
-				break;
-			case 'S':
-				cmd_print_spi_state();
-				break;
-			case 'e':
-				cmd_echo();
-				break;
-			case 'h':
-                print("hello matt\n");
+                reg_mph_active = 0;
+                reg_mph_7seg = 10;
+                print_dec(reg_mph_active);
                 break;
-			case 'q':
-                counter();
+			case '1':
+                reg_mph_active = 1;
+                reg_mph_ws2812 = 0x07AABBCC;
+                print_dec(reg_mph_active);
+                break;
+			case '2':
+                reg_mph_active = 2;
+                break;
+			case '3':
+                reg_mph_active = 3;
+                break;
+			case '4':
+                reg_mph_active = 4;
                 break;
 			default:
 				continue;

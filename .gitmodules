@@ -1,3 +1,6 @@
 [submodule "picosoc/wishbone-button-leds"]
 	path = picosoc/wishbone-button-leds
 	url = https://github.com/mattvenn/wishbone-button-leds.git
+[submodule "picosoc/mpw-multi-project-harness"]
+	path = picosoc/multi_project_harness
+	url = https://github.com/mattvenn/mpw-multi-project-harness.git

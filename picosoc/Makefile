@@ -1,4 +1,4 @@
-PI_ADDR = pi@raspberrypi.local
+PI_ADDR = pi@192.168.1.133
 FOMU_FLASH = ~/fomu-flash/fomu-flash
 
 CROSS=riscv64-unknown-elf-
@@ -28,10 +28,10 @@ ecp5sim: ecp5demo_tb.vvp ecp5demo_fw.hex
 ecp5synsim: ecp5demo_syn_tb.vvp ecp5demo_fw.hex
 	vvp -N $< +firmware=ecp5demo_fw.hex
 
-ecp5demo.json: ecp5demo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v wishbone-button-leds/wb_buttons_leds.v
+ecp5demo.json: ecp5demo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v wishbone-button-leds/wb_buttons_leds.v multi_project_harness/includes.v
 	$(ECP5_TOOLS)/yosys -ql ecp5demo.log -DSYNTH -p 'synth_ecp5 -top ecp5demo -json ecp5demo.json' $^
 
-ecp5demo_tb.vvp: ecp5demo_tb.v ecp5demo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v spiflash.v wishbone-button-leds/wb_buttons_leds.v
+ecp5demo_tb.vvp: ecp5demo_tb.v ecp5demo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v spiflash.v wishbone-button-leds/wb_buttons_leds.v multi_project_harness/includes.v
 	iverilog -s testbench -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v` # FIXME
 
 ecp5demo_syn_tb.vvp: ecp5demo_tb.v ecp5demo_syn.v spiflash.v
