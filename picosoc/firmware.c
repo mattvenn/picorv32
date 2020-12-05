@@ -20,15 +20,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifdef ECP5
-#  define MEM_TOTAL 0x200 /* 2kb */
-#elif ICEBREAKER
-#  define MEM_TOTAL 0x200 /* 128 KB */
-#elif HX8KDEMO
-#  define MEM_TOTAL 0x200 /* 2 KB */
-#else
-#  error "Set -DICEBREAKER or -DHX8KDEMO or -DECP5 when compiling firmware.c"
-#endif
+#define MEM_TOTAL 0x200 /* 2kb */
 
 // a pointer to this is a null pointer, but the compiler does not
 // know that because "sram" is a linker symbol from sections.lds.
@@ -57,106 +49,7 @@ void flashio(uint8_t *data, int len, uint8_t wrencmd)
 	((void(*)(uint8_t*, uint32_t, uint32_t))func)(data, len, wrencmd);
 }
 
-#ifdef HX8KDEMO
-void set_flash_qspi_flag()
-{
-	uint8_t buffer[8];
-	uint32_t addr_cr1v = 0x800002;
 
-	// Read Any Register (RDAR 65h)
-	buffer[0] = 0x65;
-	buffer[1] = addr_cr1v >> 16;
-	buffer[2] = addr_cr1v >> 8;
-	buffer[3] = addr_cr1v;
-	buffer[4] = 0; // dummy
-	buffer[5] = 0; // rdata
-	flashio(buffer, 6, 0);
-	uint8_t cr1v = buffer[5];
-
-	// Write Enable (WREN 06h) + Write Any Register (WRAR 71h)
-	buffer[0] = 0x71;
-	buffer[1] = addr_cr1v >> 16;
-	buffer[2] = addr_cr1v >> 8;
-	buffer[3] = addr_cr1v;
-	buffer[4] = cr1v | 2; // Enable QSPI
-	flashio(buffer, 5, 0x06);
-}
-
-void set_flash_latency(uint8_t value)
-{
-	reg_spictrl = (reg_spictrl & ~0x007f0000) | ((value & 15) << 16);
-
-	uint32_t addr = 0x800004;
-	uint8_t buffer_wr[5] = {0x71, addr >> 16, addr >> 8, addr, 0x70 | value};
-	flashio(buffer_wr, 5, 0x06);
-}
-
-void set_flash_mode_spi()
-{
-	reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00000000;
-}
-
-void set_flash_mode_dual()
-{
-	reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00400000;
-}
-
-void set_flash_mode_quad()
-{
-	reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00200000;
-}
-
-void set_flash_mode_qddr()
-{
-	reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00600000;
-}
-#endif
-
-#ifdef ICEBREAKER
-void set_flash_qspi_flag()
-{
-	uint8_t buffer[8];
-
-	// Read Configuration Registers (RDCR1 35h)
-	buffer[0] = 0x35;
-	buffer[1] = 0x00; // rdata
-    // void flashio(uint8_t *data, int len, uint8_t wrencmd)
-	flashio(buffer, 2, 0);
-	uint8_t sr2 = buffer[1];
-
-	// Write Enable Volatile (50h) + Write Status Register 2 (31h)
-	buffer[0] = 0x31;
-	buffer[1] = sr2 | 2; // Enable QSPI
-	flashio(buffer, 2, 0x50);
-}
-
-void set_flash_mode_spi()
-{
-	reg_spictrl = (reg_spictrl & ~0x007f0000) | 0x00000000;
-}
-
-void set_flash_mode_dual()
-{
-	reg_spictrl = (reg_spictrl & ~0x007f0000) | 0x00400000;
-}
-
-void set_flash_mode_quad()
-{
-	reg_spictrl = (reg_spictrl & ~0x007f0000) | 0x00240000;
-}
-
-void set_flash_mode_qddr()
-{
-	reg_spictrl = (reg_spictrl & ~0x007f0000) | 0x00670000;
-}
-
-void enable_flash_crm()
-{
-	reg_spictrl |= 0x00100000;
-}
-#endif
-
-#ifdef ECP5
 void set_flash_qspi_flag()
 {
 	uint8_t buffer[8];
@@ -197,7 +90,6 @@ void enable_flash_crm()
 {
 	reg_spictrl |= 0x00100000;
 }
-#endif
 
 // --------------------------------------------------------
 
@@ -401,38 +293,7 @@ void cmd_read_flash_id()
 
 // --------------------------------------------------------
 
-#ifdef HX8KDEMO
-uint8_t cmd_read_flash_regs_print(uint32_t addr, const char *name)
-{
-	set_flash_latency(8);
 
-	uint8_t buffer[6] = {0x65, addr >> 16, addr >> 8, addr, 0, 0};
-	flashio(buffer, 6, 0);
-
-	print("0x");
-	print_hex(addr, 6);
-	print(" ");
-	print(name);
-	print(" 0x");
-	print_hex(buffer[5], 2);
-	print("\n");
-
-	return buffer[5];
-}
-
-void cmd_read_flash_regs()
-{
-	print("\n");
-	uint8_t sr1v = cmd_read_flash_regs_print(0x800000, "SR1V");
-	uint8_t sr2v = cmd_read_flash_regs_print(0x800001, "SR2V");
-	uint8_t cr1v = cmd_read_flash_regs_print(0x800002, "CR1V");
-	uint8_t cr2v = cmd_read_flash_regs_print(0x800003, "CR2V");
-	uint8_t cr3v = cmd_read_flash_regs_print(0x800004, "CR3V");
-	uint8_t vdlp = cmd_read_flash_regs_print(0x800005, "VDLP");
-}
-#endif
-
-#ifdef ECP5
 uint8_t cmd_read_flash_reg(uint8_t cmd)
 {
 	uint8_t buffer[2] = {cmd, 0};
@@ -470,68 +331,6 @@ void cmd_read_flash_regs()
 	putchar('\n');
 }
 
-#endif
-
-#ifdef ICEBREAKER
-uint8_t cmd_read_flash_reg(uint8_t cmd)
-{
-	uint8_t buffer[2] = {cmd, 0};
-	flashio(buffer, 2, 0);
-	return buffer[1];
-}
-
-void print_reg_bit(int val, const char *name)
-{
-	for (int i = 0; i < 12; i++) {
-		if (*name == 0)
-			putchar(' ');
-		else
-			putchar(*(name++));
-	}
-
-	putchar(val ? '1' : '0');
-	putchar('\n');
-}
-
-void cmd_read_flash_regs()
-{
-	putchar('\n');
-
-	uint8_t sr1 = cmd_read_flash_reg(0x05);
-	uint8_t sr2 = cmd_read_flash_reg(0x35);
-	uint8_t sr3 = cmd_read_flash_reg(0x15);
-
-	print_reg_bit(sr1 & 0x01, "S0  (BUSY)");
-	print_reg_bit(sr1 & 0x02, "S1  (WEL)");
-	print_reg_bit(sr1 & 0x04, "S2  (BP0)");
-	print_reg_bit(sr1 & 0x08, "S3  (BP1)");
-	print_reg_bit(sr1 & 0x10, "S4  (BP2)");
-	print_reg_bit(sr1 & 0x20, "S5  (TB)");
-	print_reg_bit(sr1 & 0x40, "S6  (SEC)");
-	print_reg_bit(sr1 & 0x80, "S7  (SRP)");
-	putchar('\n');
-
-	print_reg_bit(sr2 & 0x01, "S8  (SRL)");
-	print_reg_bit(sr2 & 0x02, "S9  (QE)");
-	print_reg_bit(sr2 & 0x04, "S10 ----");
-	print_reg_bit(sr2 & 0x08, "S11 (LB1)");
-	print_reg_bit(sr2 & 0x10, "S12 (LB2)");
-	print_reg_bit(sr2 & 0x20, "S13 (LB3)");
-	print_reg_bit(sr2 & 0x40, "S14 (CMP)");
-	print_reg_bit(sr2 & 0x80, "S15 (SUS)");
-	putchar('\n');
-
-	print_reg_bit(sr3 & 0x01, "S16 ----");
-	print_reg_bit(sr3 & 0x02, "S17 ----");
-	print_reg_bit(sr3 & 0x04, "S18 (WPS)");
-	print_reg_bit(sr3 & 0x08, "S19 ----");
-	print_reg_bit(sr3 & 0x10, "S20 ----");
-	print_reg_bit(sr3 & 0x20, "S21 (DRV0)");
-	print_reg_bit(sr3 & 0x40, "S22 (DRV1)");
-	print_reg_bit(sr3 & 0x80, "S23 (HOLD)");
-	putchar('\n');
-}
-#endif
 
 // --------------------------------------------------------
 
@@ -595,108 +394,6 @@ uint32_t cmd_benchmark(bool verbose, uint32_t *instns_p)
 
 // --------------------------------------------------------
 
-#ifdef HX8KDEMO
-void cmd_benchmark_all()
-{
-	uint32_t instns = 0;
-
-	print("default        ");
-	reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00000000;
-	print(": ");
-	print_hex(cmd_benchmark(false, &instns), 8);
-	putchar('\n');
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("dspi-");
-		print_dec(i);
-		print("         ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00400000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("dspi-crm-");
-		print_dec(i);
-		print("     ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00500000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("qspi-");
-		print_dec(i);
-		print("         ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00200000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("qspi-crm-");
-		print_dec(i);
-		print("     ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00300000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("qspi-ddr-");
-		print_dec(i);
-		print("     ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00600000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	for (int i = 8; i > 0; i--)
-	{
-		print("qspi-ddr-crm-");
-		print_dec(i);
-		print(" ");
-
-		set_flash_latency(i);
-		reg_spictrl = (reg_spictrl & ~0x00700000) | 0x00700000;
-
-		print(": ");
-		print_hex(cmd_benchmark(false, &instns), 8);
-		putchar('\n');
-	}
-
-	print("instns         : ");
-	print_hex(instns, 8);
-	putchar('\n');
-}
-#endif
-
-#if defined(ICEBREAKER) || defined(ECP5)
 void cmd_benchmark_all()
 {
 	uint32_t instns = 0;
@@ -737,7 +434,6 @@ void cmd_benchmark_all()
 	putchar('\n');
 
 }
-#endif
 
 void cmd_echo()
 {
@@ -806,8 +502,7 @@ void main()
 		print("   [M] Run Memtest\n");
 		print("   [S] Print SPI state\n");
 		print("   [e] Echo UART\n");
-		print("   [q] set QE mode\n");
-		print("   [h] send passphrase\n");
+		print("   [h] say hi\n");
 		print("\n");
 
 		for (int rep = 10; rep > 0; rep--)
@@ -856,14 +551,8 @@ void main()
 			case 'e':
 				cmd_echo();
 				break;
-			case 'q':
-                counter();
-               // set_flash_qspi_flag();
-				break;
 			case 'h':
-                print("hackme12");
-                for(int i = 0; i < 10000; i ++) { ;; }
-                break;
+                print("hello matt\n");
 			default:
 				continue;
 			}

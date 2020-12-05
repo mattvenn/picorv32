@@ -1,3 +1,4 @@
+`default_nettype none
 /*
  *  PicoSoC - A simple example SoC using PicoRV32
  *
@@ -16,69 +17,75 @@
  *  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  */
-
-`ifdef PICOSOC_V
-`error "icebreaker.v must be read before picosoc.v!"
-`endif
-
-`define PICOSOC_MEM ice40up5k_spram
-
-module icebreaker (
+module ecp5demo (
 	input clk,
 
 	output ser_tx,
 	input ser_rx,
+    input reset_button,
 
-	output led1,
-	output led2,
-	output led3,
-	output led4,
-	output led5,
+	output [7:0] leds,
 
-	output ledr_n,
-	output ledg_n,
+    output led1,
+    output led2,
 
 	output flash_csb,
-	output flash_clk,
+    `ifndef SYNTH
+    output flash_clk,
+    `endif
 	inout  flash_io0,
 	inout  flash_io1,
 	inout  flash_io2,
 	inout  flash_io3
-);
-	parameter integer MEM_WORDS = 32768;
 
+/*
+	output debug_ser_tx,
+	output debug_ser_rx,
+
+	output debug_flash_csb,
+	output debug_flash_clk,
+	output debug_flash_io0,
+	output debug_flash_io1,
+	output debug_flash_io2,
+	output debug_flash_io3
+*/
+);
 	reg [5:0] reset_cnt = 0;
 	wire resetn = &reset_cnt;
 
 	always @(posedge clk) begin
 		reset_cnt <= reset_cnt + !resetn;
+        if(!reset_button) // if pressed
+            reset_cnt <= 0;
 	end
-
-	wire [7:0] leds;
-
-	assign led1 = leds[1];
-	assign led2 = leds[2];
-	assign led3 = leds[3];
-	assign led4 = leds[4];
-	assign led5 = leds[5];
-
-	assign ledr_n = !leds[6];
-	assign ledg_n = !leds[7];
 
 	wire flash_io0_oe, flash_io0_do, flash_io0_di;
 	wire flash_io1_oe, flash_io1_do, flash_io1_di;
 	wire flash_io2_oe, flash_io2_do, flash_io2_di;
 	wire flash_io3_oe, flash_io3_do, flash_io3_di;
 
-	SB_IO #(
-		.PIN_TYPE(6'b 1010_01),
-		.PULLUP(1'b 0)
-	) flash_io_buf [3:0] (
-		.PACKAGE_PIN({flash_io3, flash_io2, flash_io1, flash_io0}),
-		.OUTPUT_ENABLE({flash_io3_oe, flash_io2_oe, flash_io1_oe, flash_io0_oe}),
-		.D_OUT_0({flash_io3_do, flash_io2_do, flash_io1_do, flash_io0_do}),
-		.D_IN_0({flash_io3_di, flash_io2_di, flash_io1_di, flash_io0_di})
-	);
+    `ifdef SYNTH
+	wire flash_clk;
+    USRMCLK u1 (.USRMCLKI(flash_clk), .USRMCLKTS(flash_csb)) /* synthesis syn_noprune=1 */;
+    BBPU flash_io_buf[3:0] (
+        .B({flash_io3, flash_io2, flash_io1, flash_io0}),
+        .T({!flash_io3_oe,!flash_io2_oe,!flash_io1_oe, !flash_io0_oe}),
+        .I({flash_io3_do, flash_io2_do, flash_io1_do, flash_io0_do}),
+        .O({flash_io3_di, flash_io2_di, flash_io1_di, flash_io0_di})
+    );
+    `else
+        // this needed for sim as ecp5 sim models not available
+
+           SB_IO #(
+                   .PIN_TYPE(6'b 1010_01),
+                   .PULLUP(1'b 0)
+           ) flash_io_buf [3:0] (
+                   .PACKAGE_PIN({flash_io3, flash_io2, flash_io1, flash_io0}),
+                   .OUTPUT_ENABLE({flash_io3_oe, flash_io2_oe, flash_io1_oe, flash_io0_oe}),
+                   .D_OUT_0({flash_io3_do, flash_io2_do, flash_io1_do, flash_io0_do}),
+                   .D_IN_0({flash_io3_di, flash_io2_di, flash_io1_di, flash_io0_di})
+           );
+    `endif
 
 	wire        iomem_valid;
 	reg         iomem_ready;
@@ -89,6 +96,8 @@ module icebreaker (
 
 	reg [31:0] gpio;
 	assign leds = gpio;
+    assign led1 = !gpio[0];
+    assign led2 = !gpio[1];
 
 	always @(posedge clk) begin
 		if (!resetn) begin
@@ -106,13 +115,12 @@ module icebreaker (
 		end
 	end
 
-	picosoc #(
-		.BARREL_SHIFTER(0),
-		.ENABLE_MULDIV(0),
-		.MEM_WORDS(MEM_WORDS)
-	) soc (
+	picosoc soc (
 		.clk          (clk         ),
 		.resetn       (resetn      ),
+        
+        .led1         (led1        ),
+        .led2         (led2        ),
 
 		.ser_tx       (ser_tx      ),
 		.ser_rx       (ser_rx      ),
@@ -146,4 +154,16 @@ module icebreaker (
 		.iomem_wdata  (iomem_wdata ),
 		.iomem_rdata  (iomem_rdata )
 	);
+
+/*
+	assign debug_ser_tx = ser_tx;
+	assign debug_ser_rx = ser_rx;
+
+	assign debug_flash_csb = flash_csb;
+	assign debug_flash_clk = flash_clk;
+	assign debug_flash_io0 = flash_io0_di;
+	assign debug_flash_io1 = flash_io1_di;
+	assign debug_flash_io2 = flash_io2_di;
+	assign debug_flash_io3 = flash_io3_di;
+*/
 endmodule

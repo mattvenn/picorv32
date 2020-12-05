@@ -22,8 +22,7 @@
 module testbench;
 	reg clk;
 	always #5 clk = (clk === 1'b0);
-
-	localparam ser_half_period = 53;
+	localparam ser_half_period = 70;
 	event ser_sample;
 
 	initial begin
@@ -43,10 +42,7 @@ module testbench;
 		cycle_cnt <= cycle_cnt + 1;
 	end
 
-	wire led1, led2, led3, led4, led5;
-	wire ledr_n, ledg_n;
-
-	wire [6:0] leds = {!ledg_n, !ledr_n, led5, led4, led3, led2, led1};
+	wire [7:0] leds;
 
 	wire ser_rx;
 	wire ser_tx;
@@ -62,20 +58,9 @@ module testbench;
 		#1 $display("%b", leds);
 	end
 
-	icebreaker #(
-		// We limit the amount of memory in simulation
-		// in order to avoid reduce simulation time
-		// required for intialization of RAM
-		.MEM_WORDS(256)
-	) uut (
+	ecp5demo uut (
 		.clk      (clk      ),
-		.led1     (led1     ),
-		.led2     (led2     ),
-		.led3     (led3     ),
-		.led4     (led4     ),
-		.led5     (led5     ),
-		.ledr_n   (ledr_n   ),
-		.ledg_n   (ledg_n   ),
+		.leds     (leds     ),
 		.ser_rx   (ser_rx   ),
 		.ser_tx   (ser_tx   ),
 		.flash_csb(flash_csb),

@@ -2,122 +2,61 @@ PI_ADDR = pi@raspberrypi.local
 FOMU_FLASH = ~/fomu-flash/fomu-flash
 
 CROSS=riscv64-unknown-elf-
+GCC_PATH=/home/matt/work/fpga/ecp5-toolchain-linux_x86_64-v1.6.9/bin/
+ECP5_TOOLS=/opt/fpga-toolchain/bin
 CFLAGS=-mabi=ilp32 
 
 CONSTR=mv_ecp.lpf
 DEVICE=45k
 
-# ---- iCE40 HX8K Breakout Board ----
+ecp5demo_all.bin: ecp5demo.bit ecp5demo_fw.bin
+	cp ecp5demo.bit ecp5demo.padded.bit
+	dd if=/dev/zero of=ecp5demo.padded.bit bs=1 count=1 seek=1048575
+	cat ecp5demo.padded.bit ecp5demo_fw.bin > ecp5demo_all.bin 
 
-hx8kdemo_all.bin: hx8kdemo.bit hx8kdemo_fw.bin
-	cp hx8kdemo.bit hx8kdemo.padded.bit
-	dd if=/dev/zero of=hx8kdemo.padded.bit bs=1 count=1 seek=1048575
-	cat hx8kdemo.padded.bit hx8kdemo_fw.bin > hx8kdemo_all.bin 
-
-ecp5prog: hx8kdemo_all.bin
+ecp5prog: ecp5demo_all.bin
 	scp $< $(PI_ADDR):/tmp/$<
 	ssh $(PI_ADDR) "sudo $(FOMU_FLASH) -w /tmp/$< && sudo $(FOMU_FLASH) -r"
-    #&& ~/reset_bcm_spi.sh"
-	echo "now press sw1 on dev board to reset"
 
-ecp5prog_fw: hx8kdemo_fw.bin
+ecp5prog_fw: ecp5demo_fw.bin
 	scp $< $(PI_ADDR):/tmp/$<
 	ssh $(PI_ADDR) "sudo $(FOMU_FLASH) -w /tmp/$< -a 1048576 && sudo $(FOMU_FLASH) -r"
-    #&& ~/reset_bcm_spi.sh"
 
-hx8ksim: hx8kdemo_tb.vvp hx8kdemo_fw.hex
-	vvp -N $< +firmware=hx8kdemo_fw.hex
+ecp5sim: ecp5demo_tb.vvp ecp5demo_fw.hex
+	vvp -N $< +firmware=ecp5demo_fw.hex
 
-hx8ksynsim: hx8kdemo_syn_tb.vvp hx8kdemo_fw.hex
-	vvp -N $< +firmware=hx8kdemo_fw.hex
+ecp5synsim: ecp5demo_syn_tb.vvp ecp5demo_fw.hex
+	vvp -N $< +firmware=ecp5demo_fw.hex
 
-hx8kdemo.json: hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v 
-	yosys -ql hx8kdemo.log -p 'synth_ecp5 -top hx8kdemo -json hx8kdemo.json' $^
+ecp5demo.json: ecp5demo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v 
+	$(ECP5_TOOLS)/yosys -ql ecp5demo.log -DSYNTH -p 'synth_ecp5 -top ecp5demo -json ecp5demo.json' $^
 
-hx8kdemo_tb.vvp: hx8kdemo_tb.v hx8kdemo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v spiflash.v 
-	iverilog -s testbench -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v`
+ecp5demo_tb.vvp: ecp5demo_tb.v ecp5demo.v spimemio.v simpleuart.v picosoc.v ../picorv32.v spiflash.v 
+	iverilog -s testbench -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v` # FIXME
 
-hx8kdemo_syn_tb.vvp: hx8kdemo_tb.v hx8kdemo_syn.v spiflash.v
-	iverilog -s testbench -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v`
+ecp5demo_syn_tb.vvp: ecp5demo_tb.v ecp5demo_syn.v spiflash.v
+	iverilog -s testbench -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v` # FIXME
 
-hx8kdemo_syn.v: hx8kdemo.json
-	yosys -p 'read_json -wideports hx8kdemo.json; write_verilog hx8kdemo_syn.v'
+ecp5demo_syn.v: ecp5demo.json
+	$(ECP5_TOOLS)/yosys -p 'read_json -wideports ecp5demo.json; write_verilog ecp5demo_syn.v'
 
-hx8kdemo_out.config: hx8kdemo.json
-	#nextpnr-ice40 --freq 13 --package tq144:4k --hx8k --asc hx8kdemo.asc --pcf hx8kdemo.pcf --json hx8kdemo.json
-	/usr/local/bin/nextpnr-ecp5 -l nextpnr.log --json $< --lpf $(CONSTR) --textcfg $@ --$(DEVICE) --package CABGA256 --speed 8
+ecp5demo_out.config: ecp5demo.json
+	$(ECP5_TOOLS)/nextpnr-ecp5 -l nextpnr.log --json $< --lpf $(CONSTR) --textcfg $@ --$(DEVICE) --package CABGA256 --speed 8
 
-hx8kdemo.bin: hx8kdemo.asc
-	icetime -d hx8k -c 12 -mtr hx8kdemo.rpt hx8kdemo.asc
-	icepack hx8kdemo.asc hx8kdemo.bin
+ecp5demo.bit: ecp5demo_out.config
+	$(ECP5_TOOLS)/ecppack --compress --svf-rowsize 100000 --svf ecp5demo.svf --input $< --bit $@
 
-hx8kdemo.bit: hx8kdemo_out.config
-	/usr/bin/ecppack --compress --svf-rowsize 100000 --svf hx8kdemo.svf --input $< --bit $@
+ecp5demo_sections.lds: sections.lds
+	$(GCC_PATH)$(CROSS)cpp -P -o $@ $^
 
-hx8kprog: hx8kdemo.bin hx8kdemo_fw.bin
-	iceprog hx8kdemo.bin
-	iceprog -o 1M hx8kdemo_fw.bin
+ecp5demo_fw.elf: ecp5demo_sections.lds start.s firmware.c
+	$(GCC_PATH)$(CROSS)gcc $(CFLAGS) -march=rv32imc -Wl,-Bstatic,-T,ecp5demo_sections.lds,--strip-debug -ffreestanding -nostdlib -o ecp5demo_fw.elf start.s firmware.c
 
-hx8kprog_fw: hx8kdemo_fw.bin
-	iceprog -o 1M hx8kdemo_fw.bin
+ecp5demo_fw.hex: ecp5demo_fw.elf
+	$(GCC_PATH)$(CROSS)objcopy -O verilog ecp5demo_fw.elf ecp5demo_fw.hex
 
-hx8kdemo_sections.lds: sections.lds
-	$(CROSS)cpp -P -DHX8KDEMO -o $@ $^
-
-hx8kdemo_fw.elf: hx8kdemo_sections.lds start.s firmware.c
-	$(CROSS)gcc $(CFLAGS) -DICEBREAKER -march=rv32imc -Wl,-Bstatic,-T,hx8kdemo_sections.lds,--strip-debug -ffreestanding -nostdlib -o hx8kdemo_fw.elf start.s firmware.c
-
-hx8kdemo_fw.hex: hx8kdemo_fw.elf
-	$(CROSS)objcopy -O verilog hx8kdemo_fw.elf hx8kdemo_fw.hex
-
-hx8kdemo_fw.bin: hx8kdemo_fw.elf
-	$(CROSS)objcopy -O binary hx8kdemo_fw.elf hx8kdemo_fw.bin
-
-# ---- iCE40 IceBreaker Board ----
-
-icebsim: icebreaker_tb.vvp icebreaker_fw.hex
-	vvp -N $< +firmware=icebreaker_fw.hex
-
-icebsynsim: icebreaker_syn_tb.vvp icebreaker_fw.hex
-	vvp -N $< +firmware=icebreaker_fw.hex
-
-icebreaker.json: icebreaker.v ice40up5k_spram.v spimemio.v simpleuart.v picosoc.v ../picorv32.v
-	yosys -ql icebreaker.log -p 'synth_ice40 -top icebreaker -json icebreaker.json' $^
-
-icebreaker_tb.vvp: icebreaker_tb.v icebreaker.v ice40up5k_spram.v spimemio.v simpleuart.v picosoc.v ../picorv32.v spiflash.v
-	iverilog -s testbench -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v`
-
-icebreaker_syn_tb.vvp: icebreaker_tb.v icebreaker_syn.v spiflash.v
-	iverilog -s testbench -o $@ $^ `yosys-config --datdir/ice40/cells_sim.v`
-
-icebreaker_syn.v: icebreaker.json
-	yosys -p 'read_json icebreaker.json; write_verilog icebreaker_syn.v'
-
-icebreaker.asc: icebreaker.pcf icebreaker.json
-	nextpnr-ice40 --freq 13 --up5k --asc icebreaker.asc --pcf icebreaker.pcf --json icebreaker.json
-
-icebreaker.bin: icebreaker.asc
-	icetime -d up5k -c 12 -mtr icebreaker.rpt icebreaker.asc
-	icepack icebreaker.asc icebreaker.bin
-
-icebprog: icebreaker.bin icebreaker_fw.bin
-	iceprog icebreaker.bin
-	iceprog -o 1M icebreaker_fw.bin
-
-icebprog_fw: icebreaker_fw.bin
-	iceprog -o 1M icebreaker_fw.bin
-
-icebreaker_sections.lds: sections.lds
-	$(CROSS)cpp -P -DICEBREAKER -o $@ $^
-
-icebreaker_fw.elf: icebreaker_sections.lds start.s firmware.c
-	$(CROSS)gcc $(CFLAGS) -DICEBREAKER -march=rv32ic -Wl,-Bstatic,-T,icebreaker_sections.lds,--strip-debug -ffreestanding -nostdlib -o icebreaker_fw.elf start.s firmware.c
-
-icebreaker_fw.hex: icebreaker_fw.elf
-	$(CROSS)objcopy -O verilog icebreaker_fw.elf icebreaker_fw.hex
-
-icebreaker_fw.bin: icebreaker_fw.elf
-	$(CROSS)objcopy -O binary icebreaker_fw.elf icebreaker_fw.bin
+ecp5demo_fw.bin: ecp5demo_fw.elf
+	$(GCC_PATH)$(CROSS)objcopy -O binary ecp5demo_fw.elf ecp5demo_fw.bin
 
 # ---- Testbench for SPI Flash Model ----
 
@@ -127,22 +66,14 @@ spiflash_tb: spiflash_tb.vvp firmware.hex
 spiflash_tb.vvp: spiflash.v spiflash_tb.v
 	iverilog -s testbench -o $@ $^
 
-# ---- ASIC Synthesis Tests ----
-
-cmos.log: spimemio.v simpleuart.v picosoc.v ../picorv32.v
-	yosys -l cmos.log -p 'synth -top picosoc; abc -g cmos2; opt -fast; stat' $^
 
 # ---- Clean ----
 
 clean:
 	rm -f testbench.vvp testbench.vcd spiflash_tb.vvp spiflash_tb.vcd
-	rm -f hx8kdemo_fw.elf hx8kdemo_fw.hex hx8kdemo_fw.bin cmos.log
-	rm -f icebreaker_fw.elf icebreaker_fw.hex icebreaker_fw.bin
-	rm -f hx8kdemo.json hx8kdemo.log hx8kdemo.asc hx8kdemo.rpt hx8kdemo.bin
-	rm -f hx8kdemo_syn.v hx8kdemo_syn_tb.vvp hx8kdemo_tb.vvp
-	rm -f icebreaker.json icebreaker.log icebreaker.asc icebreaker.rpt icebreaker.bin
-	rm -f icebreaker_syn.v icebreaker_syn_tb.vvp icebreaker_tb.vvp
+	rm -f ecp5demo_fw.elf ecp5demo_fw.hex ecp5demo_fw.bin cmos.log
+	rm -f ecp5demo.json ecp5demo.log ecp5demo.asc ecp5demo.rpt ecp5demo.bin
+	rm -f ecp5demo_syn.v ecp5demo_syn_tb.vvp ecp5demo_tb.vvp
 
 .PHONY: spiflash_tb clean
-.PHONY: hx8kprog hx8kprog_fw hx8ksim hx8ksynsim
-.PHONY: icebprog icebprog_fw icebsim icebsynsim
+.PHONY: ecp5prog ecp5prog_fw ecp5sim ecp5synsim
