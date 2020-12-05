@@ -1,18 +1,10 @@
-# Changes made for my dev board
+# Changes made for my ecp5 dev board
 
-https://github.com/mattvenn/first-fpga-pcb
-
-* add SB_IO pullup on hold pin of flash, otherwise noise will randomly stop the flash
-* change memory offset for faster loading with fomu
-* change PROGADDR_RESET in picosoc.v to 0x40000 (256k)
-* change FLASH (rx)      : ORIGIN = 0x00040000, LENGTH = 0x400000 /* entire flash, 4 MiB */
+https://github.com/mattvenn/basic-ecp5-pcb
 
 ## raspi setup
 
-* connect serial tx (pin 8) to pin 1 (top right pin) of pmod3
-* connect serial rx (pin 10) to pin 2 of pmod3
 * enable serial with raspi-config
-* program with make prog-pi-fpga (scp file to pi, fomu-flash -w file, fomu-flash -r)
 * press the reset button on dev board 
 * miniterm.py /dev/serial0 115200
 
