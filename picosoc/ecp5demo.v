@@ -103,18 +103,7 @@ module ecp5demo (
         .leds       (wb_leds)
     );
 
-    multi_project_harness #(
-    // address_active: write to this memory address to select the project
-    .address_active ( 32'h0310_0000),
-    .address_oeb0   ( 32'h0310_0004),
-    .address_oeb1   ( 32'h0310_0008),
-    // each project gets 0x100 bytes memory space
-    .address_ws2812 ( 32'h0310_0100),
-    .address_7seg   ( 32'h0310_0200),
-    // h30000300 reserved for proj_3: spinet
-    .address_freq   ( 32'h0310_0400),
-    .address_watch  ( 32'h0310_0500),
-    .num_projects   ( 8)) mph (
+    user_project_wrapper  user_project_wrapper(
 
     // Wishbone Slave ports (WB MI A)
     .wb_clk_i       (clk),             // clock
